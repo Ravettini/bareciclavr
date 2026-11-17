@@ -10,22 +10,30 @@ La página de inicio (`index.html`) es un **selector**: se elige la experiencia 
 | **Buenos Aires Recicla**: separar residuos en la Estación Saludable | `/reciclaje.html` | Prueba jugable |
 | **La plaza que se vacía**: la baja de la natalidad (Subsecretaría de Familia y Natalidad) | `/natalidad.html` | Parte 1 jugable |
 
-## La plaza que se vacía (parte 1)
+## La plaza que se vacía
 
-Unos 2 minutos, de pie o sentado, con controles o manos:
+Unos 4 minutos, de pie o sentado, con controles o con las manos. Un juego distinto por año, en la
+misma plaza, y cada vez con menos chicos (según la serie de nacimientos):
 
-1. **2014:** una plaza llena de chicos. Uno le pasa la pelota al jugador: la ataja (con el gatillo
-   o la mano cerrada cuando llega) y se la devuelve. Si la tira mal, el chico la va a buscar.
-2. **Pasan los años:** 2015…2024. Los chicos se van yendo caminando según la serie de nacimientos,
-   las hamacas se frenan y el sonido se apaga. En 2024 queda la mitad.
-3. **Tiro final:** la pelota vuelve rodando sola. El jugador la tira y nadie se la devuelve.
-4. **El dato:** "En diez años, en la Ciudad nacen la mitad de chicos".
-5. **Cierre:** "Tener hijos es una decisión de cada persona. Que quien quiera, pueda" y Reiniciar.
+| Año | Juego | Qué hace el jugador |
+|---|---|---|
+| 2014 | Pelota | Un chico le pasa la pelota: la ataja y se la devuelve. Si la tira mal, el chico la va a buscar (esquivando al jugador). |
+| 2016 | Básquet | Tira al aro (con ayuda para apuntar); los chicos festejan cada doble. |
+| 2019 | Hamaca | Empuja a una chica en la hamaca. La hamaca de al lado ya está vacía. |
+| 2022 | Burbujas | Una chica sopla burbujas y el jugador las revienta con las manos. |
+| 2024 | Final | La pelota vuelve rodando sola. La tira y nadie se la devuelve. Después, el dato y el cierre. |
 
-Textos, tiempos y la serie de años están en [`datos/natalidad.json`](datos/natalidad.json).
+Entre capítulos hay un fundido a negro y el jugador aparece en otro lugar de la plaza (sin
+movimiento artificial, para no marear); avanzan los años con un tic-tac y se van chicos.
+
+**Con las manos** (seguimiento de manos): cerrar la mano cerca de la pelota la agarra y abrirla la
+suelta; si la pelota llega volando a la palma, queda atajada, y se tira con un movimiento rápido.
+También sirve pellizcar. **Con controles:** gatillo o botón lateral.
+
+Textos, años y duración de cada capítulo están en [`datos/natalidad.json`](datos/natalidad.json).
 **Pendiente:** reemplazar la serie ilustrativa por la oficial del IDECBA, la revisión de
-comunicación institucional, una grabación de sonido ambiente real y una locución, y la parte 2
-("¿Qué hace falta?").
+comunicación institucional, sonido ambiente grabado y locución, y una parte final sobre "¿Qué hace
+falta?" con los programas de la subsecretaría.
 
 ---
 
@@ -147,7 +155,7 @@ reciclaje.html          página de Buenos Aires Recicla ("import map" con three.
 datos/reglas.json       reglas, puntajes y textos editables
 natalidad.html          página de La plaza que se vacía
 datos/natalidad.json    textos, tiempos y serie de nacimientos (a validar)
-src/natalidad/          plaza que se vacía: chicos, juegos, pelota, sonido y guion
+src/natalidad/          plaza que se vacía: chicos, juegos, capítulos, pelota, sonido y guion
 src/arranque.js         emulador opcional (?emular=1) y modo offline
 src/main.js             arma la escena y conecta todo
 src/config.js           medidas de la escena (mesa, contenedores, panel)

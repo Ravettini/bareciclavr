@@ -26,6 +26,12 @@ export class Panel {
     this.ultimo = null;
   }
 
+  /** Mueve el panel a "posicion" (mundo), mirando hacia "mirarA". */
+  colocar(posicion, mirarA) {
+    this.malla.position.copy(posicion);
+    this.malla.lookAt(mirarA.x, Math.min(posicion.y - 0.1, mirarA.y), mirarA.z);
+  }
+
   /**
    * @param {{titulo:string, cuerpo:string, pie?:string, tono?:'neutro'|'acierto'|'error'}} contenido
    */

@@ -3,16 +3,20 @@ import { XRHandModelFactory } from 'three/addons/webxr/XRHandModelFactory.js';
 import { CONFIG } from '../config.js';
 
 /**
- * Agarrar y soltar con los controles del Quest 2 (gatillo o botón lateral),
- * con las manos (seguimiento de manos: pellizcar índice y pulgar)
- * y con el mouse cuando se juega en una PC sin visor.
+ * Agarrar y soltar objetos con:
+ *  - Controles del Quest 2: gatillo o botón lateral (grip).
+ *  - Manos (seguimiento de manos): CERRAR la mano cerca del objeto para agarrarlo y ABRIRLA para
+ *    soltarlo; también funciona el pellizco (índice + pulgar).
+ *  - Mouse, en una PC sin visor.
  *
- * - Agarre cercano: si la mano toca un residuo, lo toma.
- * - Agarre a distancia: si no, toma el primer residuo que apunta el rayo
- *   (pensado para jugar sentado o con poco alcance). El objeto viaja a la mano.
- * - Al soltar, el residuo conserva la velocidad de la mano (se puede tirar).
+ * Además:
+ *  - Agarre a distancia con el rayo (útil sentado): apuntar y apretar / pellizcar.
+ *  - Atajar: si un objeto "atajable" en movimiento llega a la palma (o al control con el botón
+ *    apretado), queda agarrado. Con la mano, se tira moviendo la mano rápido o abriéndola.
+ *  - Al soltar, el objeto conserva la velocidad de la mano (se puede tirar).
  *
- * También sirve para "presionar" botones 3D (por ejemplo, Reiniciar).
+ * Los objetos agarrables exponen: raiz (Object3D), radio, estado, velocidad, agarrable y,
+ * opcionalmente, radioAgarre (distancia extra para agarrarlos de cerca) y atajable.
  */
 export class Manos {
   /**
@@ -20,12 +24,14 @@ export class Manos {
    * @param {THREE.WebGLRenderer} p.renderer
    * @param {THREE.Scene} p.escena
    * @param {THREE.Camera} p.camara
-   * @param {() => import('../escena/residuos.js').Residuo[]} p.residuos
+   * @param {() => object[]} p.residuos objetos agarrables
    * @param {() => THREE.Object3D[]} p.botones objetos con userData.alPresionar
-   * @param {(r) => void} p.alSoltar
+   * @param {(obj) => void} p.alSoltar
+   * @param {THREE.Object3D} [p.padre] grupo del jugador (para moverlo por la escena); por defecto, la escena
    */
-  constructor({ renderer, escena, camara, residuos, botones, alSoltar }) {
+  constructor({ renderer, escena, camara, residuos, botones, alSoltar, padre }) {
     Object.assign(this, { renderer, escena, camara, residuos, botones, alSoltar });
+    this.padre = padre || escena;
     this.raycaster = new THREE.Raycaster();
     this.fabricaManos = new XRHandModelFactory();
     this.manos = [];
@@ -33,18 +39,21 @@ export class Manos {
     this.manoMouse = this.crearManoMouse();
   }
 
-  // ---------- Controles XR ----------
+  // ---------- Controles y manos XR ----------
 
   crearManoXR(indice) {
-    const { renderer, escena } = this;
+    const { renderer } = this;
     const control = renderer.xr.getController(indice); // espacio del rayo
-    const agarre = renderer.xr.getControllerGrip(indice); // espacio de la empuñadura
-    const manoReal = renderer.xr.getHand(indice); // articulaciones de la mano (hand tracking)
-    escena.add(control, agarre, manoReal);
+    const agarre = renderer.xr.getControllerGrip(indice); // empuñadura (donde está la mano)
+    const manoReal = renderer.xr.getHand(indice); // articulaciones (hand tracking)
+    this.padre.add(control, agarre, manoReal);
     const modelo = modeloControl();
     agarre.add(modelo);
-    // Esferas en las articulaciones: no descarga nada (el modelo "mesh" sí lo haría).
     manoReal.add(this.fabricaManos.createHandModel(manoReal, 'spheres'));
+    // Ancla en la palma: ahí se "pega" lo que se agarra con la mano.
+    const palma = new THREE.Object3D();
+    palma.name = 'Palma';
+    manoReal.add(palma);
 
     const rayo = new THREE.Line(
       new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]),
@@ -53,11 +62,15 @@ export class Manos {
     rayo.visible = false;
     control.add(rayo);
 
-    const mano = { tipo: 'xr', control, manoReal, rayo, fuente: null, agarrado: null, presionados: 0, historial: [] };
+    const mano = {
+      tipo: 'xr', control, agarre, manoReal, palma, rayo, fuente: null,
+      agarrado: null, modo: null, presionados: 0, historial: [],
+      cierre: 0, cerrada: false, velocidadMano: 0, posAnterior: new THREE.Vector3(), tuvoCierre: false,
+    };
     control.addEventListener('connected', (e) => {
       mano.fuente = e.data;
       rayo.visible = e.data.targetRayMode === 'tracked-pointer';
-      modelo.visible = !e.data.hand; // con las manos no se dibuja el control
+      modelo.visible = !e.data.hand;
     });
     control.addEventListener('disconnected', () => {
       this.soltar(mano);
@@ -67,11 +80,14 @@ export class Manos {
     });
     const presionar = () => {
       mano.presionados++;
-      if (mano.presionados === 1) this.presionar(mano);
+      if (mano.presionados !== 1) return;
+      // Si atajó con el control sin apretar, apretar y soltar el botón lo tira.
+      if (mano.agarrado) { mano.modo = 'boton'; return; }
+      this.presionar(mano);
     };
     const liberar = () => {
       mano.presionados = Math.max(0, mano.presionados - 1);
-      if (mano.presionados === 0) this.soltar(mano);
+      if (mano.presionados === 0 && mano.modo === 'boton') this.soltar(mano);
     };
     control.addEventListener('selectstart', presionar);
     control.addEventListener('squeezestart', presionar);
@@ -80,43 +96,42 @@ export class Manos {
     return mano;
   }
 
-  /** Intenta presionar un botón o agarrar un residuo con la mano. */
+  esMano(mano) {
+    return !!mano.fuente?.hand;
+  }
+
+  /** Intenta presionar un botón o agarrar algo (gatillo, grip o pellizco). */
   presionar(mano) {
     if (mano.agarrado) return;
-    const pos = this.puntoDeAgarre(mano);
-
-    // 1) Agarre cercano.
-    let elegido = null;
-    let mejor = CONFIG.agarre.distanciaCercana;
-    for (const r of this.residuos()) {
-      if (!r.agarrable) continue;
-      const d = r.raiz.position.distanceTo(pos) - r.radio * 0.5;
-      if (d < mejor) { mejor = d; elegido = r; }
-    }
-    if (elegido) return this.agarrar(mano, elegido, false);
-
-    // 2) Rayo: botones y residuos.
+    const cercano = this.masCercano(this.puntoDeAgarre(mano), CONFIG.agarre.distanciaCercana);
+    if (cercano) return this.agarrar(mano, cercano, false, 'boton');
     const impacto = this.apuntado(mano);
     if (!impacto) return;
     if (impacto.boton) impacto.boton.userData.alPresionar();
-    else this.agarrar(mano, impacto.residuo, true);
+    else this.agarrar(mano, impacto.residuo, true, 'boton');
+  }
+
+  /** Objeto agarrable más cercano a un punto (dentro del alcance de cada objeto). */
+  masCercano(punto, alcanceBase) {
+    let elegido = null;
+    let mejor = Infinity;
+    for (const r of this.residuos()) {
+      if (!r.agarrable) continue;
+      const d = r.raiz.getWorldPosition(_tmp).distanceTo(punto) - r.radio * 0.5;
+      const alcance = r.radioAgarre ?? alcanceBase;
+      if (d < alcance && d < mejor) { mejor = d; elegido = r; }
+    }
+    return elegido;
   }
 
   /**
-   * Dónde "agarra" la mano: con controles, el origen del rayo; con las manos,
-   * el punto medio entre las puntas del índice y del pulgar (el pellizco).
+   * Dónde agarra la mano: con manos, el centro de la palma; con controles, la empuñadura
+   * (donde está la mano real), o el origen del rayo si no hay empuñadura.
    */
-  puntoDeAgarre(mano) {
-    const p = new THREE.Vector3();
-    const indice = mano.manoReal?.joints?.['index-finger-tip'];
-    const pulgar = mano.manoReal?.joints?.['thumb-tip'];
-    if (mano.fuente?.hand && indice && pulgar && indice.visible !== false) {
-      const q = new THREE.Vector3();
-      indice.getWorldPosition(p);
-      pulgar.getWorldPosition(q);
-      return p.add(q).multiplyScalar(0.5);
-    }
-    return mano.control.getWorldPosition(p);
+  puntoDeAgarre(mano, destino = new THREE.Vector3()) {
+    if (this.esMano(mano) && mano.manoReal.joints?.wrist) return mano.palma.getWorldPosition(destino);
+    if (mano.agarre && mano.fuente?.gripSpace) return mano.agarre.getWorldPosition(destino);
+    return mano.control.getWorldPosition(destino);
   }
 
   /** Primer residuo agarrable o botón que apunta el rayo de la mano. */
@@ -141,21 +156,32 @@ export class Manos {
     return null;
   }
 
-  agarrar(mano, residuo, aDistancia) {
-    // Si lo tenía la otra mano, se lo pasa.
+  /**
+   * @param {'boton'|'cierre'|'atajada'} modo cómo se agarró (define cómo se suelta)
+   */
+  agarrar(mano, residuo, aDistancia, modo = 'boton') {
     for (const m of [...this.manos, this.manoMouse]) if (m.agarrado === residuo) this.soltar(m, false);
-    if (aDistancia) {
-      // El objeto "vuela" a la mano: lo ubicamos un poco delante del control.
+    const conMano = this.esMano(mano);
+    const ancla = conMano ? mano.palma : (mano.tipo === 'xr' && mano.fuente?.gripSpace ? mano.agarre : mano.control);
+    if (aDistancia || conMano) {
+      // El objeto viaja a la mano (con la mano, queda apoyado en la palma).
       let destino;
       if (mano.tipo !== 'xr') destino = mano.control.position.clone();
-      else if (mano.fuente?.hand) destino = this.puntoDeAgarre(mano);
-      else destino = new THREE.Vector3(0, 0, -0.06).applyMatrix4(mano.control.matrixWorld);
+      else if (conMano) destino = mano.palma.localToWorld(new THREE.Vector3(0, -residuo.radio * 0.6, 0));
+      else destino = new THREE.Vector3(0, 0, -0.06).applyMatrix4(ancla.matrixWorld);
+      ancla.worldToLocal(destino);
+      ancla.add(residuo.raiz);
       residuo.raiz.position.copy(destino);
+    } else {
+      ancla.attach(residuo.raiz);
     }
-    mano.control.attach(residuo.raiz);
     residuo.estado = 'agarrado';
     residuo.ultimaMano = mano;
     mano.agarrado = residuo;
+    mano.modo = modo;
+    mano.tuvoCierre = mano.cierre > 0.6;
+    mano.picoVelocidad = 0;
+    mano.agarradoEn = performance.now();
     mano.historial.length = 0;
     this.vibrar(mano, 0.3, 40);
   }
@@ -164,16 +190,24 @@ export class Manos {
     const r = mano.agarrado;
     if (!r) return;
     mano.agarrado = null;
-    this.escena.attach(r.raiz); // conserva la posición mundial
-    // Velocidad estimada con las últimas posiciones (permite "tirar" el objeto).
+    mano.modo = null;
+    this.escena.attach(r.raiz);
     const h = mano.historial;
     r.velocidad.set(0, 0, 0);
     if (h.length >= 2) {
       const a = h[0], b = h[h.length - 1];
       const dt = b.t - a.t;
-      if (dt > 0.001) r.velocidad.subVectors(b.p, a.p).divideScalar(dt).clampLength(0, CONFIG.fisica.velocidadMaxima);
+      if (dt > 0.001) r.velocidad.subVectors(b.p, a.p).divideScalar(dt);
     }
+    // Con la mano, el impulso del tiro es la velocidad máxima reciente de la palma
+    // (al soltar, la mano ya está frenando).
+    if (this.esMano(mano) && mano.velocidades?.length) {
+      const pico = mano.velocidades.reduce((max, x) => (x.v.lengthSq() > max.lengthSq() ? x.v : max), r.velocidad);
+      r.velocidad.copy(pico);
+    }
+    r.velocidad.clampLength(0, CONFIG.fisica.velocidadMaxima);
     r.estado = 'cayendo';
+    r.soltadoEn = performance.now(); // para no volver a atajarlo apenas sale de la mano
     if (notificar) this.alSoltar(r);
   }
 
@@ -182,13 +216,89 @@ export class Manos {
     try { actuador?.pulse?.(intensidad, ms); } catch { /* sin vibración */ }
   }
 
+  // ---------- Mano: cierre y palma ----------
+
+  /** Actualiza la palma, cuánto está cerrada la mano (0 abierta … 1 puño) y su velocidad. */
+  actualizarPalma(mano, dt) {
+    mano.conPalma = false;
+    const j = mano.manoReal.joints;
+    if (!this.esMano(mano) || !j?.wrist || !j['middle-finger-phalanx-proximal']) { mano.cierre = 0; return; }
+    const muñeca = j.wrist.position;
+    mano.palma.position.lerpVectors(muñeca, j['middle-finger-phalanx-proximal'].position, 0.6);
+    mano.palma.quaternion.copy(j.wrist.quaternion);
+    // Distancia promedio de las puntas de los dedos a la muñeca: abierta ≈ 17 cm, puño ≈ 9 cm.
+    let suma = 0, n = 0;
+    for (const dedo of ['index', 'middle', 'ring', 'pinky']) {
+      const punta = j[`${dedo}-finger-tip`];
+      if (punta) { suma += punta.position.distanceTo(muñeca); n++; }
+    }
+    if (!n) return;
+    mano.conPalma = true;
+    mano.cierre = THREE.MathUtils.clamp((0.165 - suma / n) / 0.07, 0, 1);
+    const pos = mano.palma.getWorldPosition(_tmp3);
+    if (dt > 0) {
+      const vel = new THREE.Vector3().subVectors(pos, mano.posAnterior).divideScalar(dt);
+      mano.velocidadMano = vel.length();
+      // Velocidades recientes de la palma: al soltar se usa la máxima (el impulso del tiro).
+      const ahora = performance.now();
+      (mano.velocidades ||= []).push({ v: vel, t: ahora });
+      while (mano.velocidades.length && ahora - mano.velocidades[0].t > 150) mano.velocidades.shift();
+    }
+    mano.posAnterior.copy(pos);
+  }
+
+  /** Gestos de la mano: cerrar para agarrar, abrir para soltar, tirar con la palma abierta. */
+  gestosMano(mano) {
+    if (!mano.conPalma) return;
+    const estabaCerrada = mano.cerrada;
+    if (mano.cierre > 0.6) mano.cerrada = true;
+    else if (mano.cierre < 0.35) mano.cerrada = false;
+
+    if (!mano.agarrado && mano.cerrada && !estabaCerrada) {
+      // Cerró la mano: agarra lo que tenga cerca de la palma.
+      const r = this.masCercano(mano.palma.getWorldPosition(new THREE.Vector3()), 0.1);
+      if (r) this.agarrar(mano, r, false, 'cierre');
+    } else if (mano.agarrado && mano.modo === 'cierre' && !mano.cerrada) {
+      this.soltar(mano); // abrió la mano
+    } else if (mano.agarrado && mano.modo === 'atajada') {
+      // Atajó con la palma abierta: se suelta al cerrar y abrir la mano, o tirando:
+      // cuando la mano pasa los 1,6 m/s y empieza a frenar (el "pico" del tiro).
+      // Los primeros 0,4 s no cuentan: el movimiento de atajar no es un tiro.
+      if (performance.now() - mano.agarradoEn < 400) { mano.picoVelocidad = 0; return; }
+      if (mano.cerrada) mano.tuvoCierre = true;
+      if (mano.tuvoCierre && !mano.cerrada) return this.soltar(mano);
+      if (!mano.cerrada && mano.velocidadMano > 1.6) mano.picoVelocidad = Math.max(mano.picoVelocidad || 0, mano.velocidadMano);
+      else if (mano.picoVelocidad && mano.velocidadMano < mano.picoVelocidad * 0.6) { mano.picoVelocidad = 0; this.soltar(mano); }
+    }
+  }
+
+  /**
+   * Atajar en el aire: con la palma (manos) o con el botón apretado (controles).
+   * Solo objetos que vienen volando ("lanzada", por ejemplo tirados por un chico), y no justo
+   * después de soltarlos (si no, la mano los volvería a atrapar al tirarlos).
+   */
+  atajar() {
+    for (const r of this.residuos()) {
+      if (!r.atajable || r.estado !== 'lanzada') continue;
+      if (r.soltadoEn && performance.now() - r.soltadoEn < 500) continue;
+      const pos = r.raiz.getWorldPosition(_tmp2);
+      for (const mano of this.manos) {
+        if (mano.agarrado || !mano.fuente) continue;
+        const d = this.puntoDeAgarre(mano, _tmp).distanceTo(pos);
+        if (this.esMano(mano) && d < 0.22) { this.agarrar(mano, r, false, mano.cerrada ? 'cierre' : 'atajada'); return r; }
+        if (!this.esMano(mano) && mano.presionados > 0 && d < 0.3) { this.agarrar(mano, r, false, 'boton'); return r; }
+      }
+    }
+    return null;
+  }
+
   // ---------- Mouse (PC sin visor) ----------
 
   crearManoMouse() {
     const control = new THREE.Object3D();
     control.name = 'ManoMouse';
     this.escena.add(control);
-    const mano = { tipo: 'mouse', control, agarrado: null, historial: [], distancia: 0 };
+    const mano = { tipo: 'mouse', control, agarrado: null, modo: null, historial: [], distancia: 0 };
     const canvas = this.renderer.domElement;
     const ndc = new THREE.Vector2();
     const actualizarRayo = (e) => {
@@ -204,7 +314,7 @@ export class Manos {
       if (impacto.boton) return impacto.boton.userData.alPresionar();
       mano.distancia = impacto.distancia;
       control.position.copy(this.raycaster.ray.at(mano.distancia, new THREE.Vector3()));
-      this.agarrar(mano, impacto.residuo, false);
+      this.agarrar(mano, impacto.residuo, false, 'boton');
       canvas.setPointerCapture(e.pointerId);
     });
     canvas.addEventListener('pointermove', (e) => {
@@ -218,14 +328,17 @@ export class Manos {
 
   // ---------- Por frame ----------
 
-  actualizar(tiempo) {
+  actualizar(tiempo, dt = 0) {
     for (const mano of [...this.manos, this.manoMouse]) {
+      if (mano.tipo === 'xr') this.actualizarPalma(mano, dt);
+      // Primero se registra dónde está lo agarrado (para calcular la velocidad del tiro)…
       if (mano.agarrado) {
         mano.historial.push({ p: mano.agarrado.raiz.getWorldPosition(new THREE.Vector3()), t: tiempo });
-        while (mano.historial.length > 2 && tiempo - mano.historial[0].t > 0.1) mano.historial.shift();
+        while (mano.historial.length > 2 && tiempo - mano.historial[0].t > 0.12) mano.historial.shift();
       }
+      // …y después se decide si se agarra o se suelta.
+      if (mano.tipo === 'xr') this.gestosMano(mano);
       if (mano.tipo === 'xr' && mano.rayo.visible) {
-        // El rayo se acorta y se pinta de amarillo cuando apunta a algo útil.
         const impacto = mano.agarrado ? null : this.apuntado(mano);
         mano.rayo.scale.z = impacto ? impacto.distancia : 0.6;
         mano.rayo.material.color.set(impacto ? '#ffd400' : '#ffffff');
@@ -233,6 +346,9 @@ export class Manos {
     }
   }
 }
+const _tmp = new THREE.Vector3();
+const _tmp2 = new THREE.Vector3();
+const _tmp3 = new THREE.Vector3();
 
 /** Modelo provisional del control (los modelos oficiales se bajan de internet; acá no). */
 function modeloControl() {

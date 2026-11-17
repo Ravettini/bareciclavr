@@ -6,36 +6,42 @@ import { malla } from '../escena/materiales.js';
 import { Manos } from '../interaccion/manos.js';
 import { crearBotonVR } from '../interaccion/botonVR.js';
 import { mostrarAviso, VERSION } from '../avisos.js';
-import { Hamacas, crearTobogan, crearArenero } from './juegos.js';
+import { Hamacas, crearTobogan, crearArenero, crearAro, Burbujas } from './juegos.js';
 import { Chicos } from './chicos.js';
 import { Pelota } from './pelota.js';
 import { Ambiente } from './ambiente.js';
 import { Guion } from './guion.js';
 
 /**
- * "La plaza que se vacía" — experiencia sobre la baja de la natalidad (parte 1).
- * El jugador está en el origen mirando hacia -Z, de pie o sentado, sin desplazarse.
+ * "La plaza que se vacía" — experiencia sobre la baja de la natalidad.
+ * El jugador no se desplaza con el joystick: entre capítulos aparece en otro lugar de la plaza
+ * con un fundido a negro (cómodo, no marea). Se juega de pie o sentado.
  */
 
-/** Ubicación y comportamiento de cada chico. "orden" = en qué orden se van (menor = antes). */
+/**
+ * Chicos de la plaza. "orden" = en qué orden se van (menor = antes). Los que tienen un papel en
+ * un capítulo se van después de ese capítulo: el pasador después del básquet (2016), el de la
+ * hamaca después de 2019; la chica de las burbujas se queda.
+ */
 const CHICOS = [
-  { comportamiento: 'pelota', posicion: [0, 0, -3.2], escala: 1.05, orden: 4 },
-  { comportamiento: 'hamaca', asiento: 0, escala: 0.95, orden: 2 },
-  { comportamiento: 'hamaca', asiento: 1, escala: 1.0 },
-  { comportamiento: 'salta', posicion: [2.5, 0, -1.6], escala: 0.85, orden: 5 },
-  { comportamiento: 'salta', posicion: [3.4, 0, -2.3], escala: 0.9 },
-  { comportamiento: 'corre', centro: [0, 0, -6.8], radio: 2.0, velocidad: 0.9, escala: 1.1, orden: 3 },
-  { comportamiento: 'corre', centro: [0, 0, -6.8], radio: 2.0, velocidad: 0.9, fase: 2.1, escala: 1.0 },
-  { comportamiento: 'corre', centro: [0, 0, -6.8], radio: 2.0, velocidad: 0.9, fase: 4.2, escala: 1.15, orden: 8 },
-  { comportamiento: 'corre', centro: [-2.6, 0, -2.2], radio: 1.1, velocidad: -1.3, escala: 0.9, orden: 6 },
-  { comportamiento: 'corre', centro: [-2.6, 0, -2.2], radio: 1.1, velocidad: -1.3, fase: 3.1, escala: 0.95 },
-  { comportamiento: 'corre', centro: [2.6, 0, -7.2], radio: 0.9, velocidad: 0.5, fase: 0, escala: 1.0, orden: 1 },
-  { comportamiento: 'corre', centro: [2.6, 0, -7.2], radio: 0.9, velocidad: 0.5, fase: Math.PI / 2, escala: 0.9, orden: 7 },
-  { comportamiento: 'corre', centro: [2.6, 0, -7.2], radio: 0.9, velocidad: 0.5, fase: Math.PI, escala: 1.05 },
-  { comportamiento: 'corre', centro: [2.6, 0, -7.2], radio: 0.9, velocidad: 0.5, fase: (3 * Math.PI) / 2, escala: 0.95 },
-  { comportamiento: 'salta', posicion: [-1.7, 0, -4.4], escala: 1.0 },
-  { comportamiento: 'corre', centro: [4.6, 0, -3.6], radio: 0.8, velocidad: 1.4, escala: 0.85 },
+  /* 0 pasador  */ { comportamiento: 'corre', centro: [0.8, 0, -4.2], radio: 0.6, velocidad: 1.1, escala: 1.05, orden: 4, pelo: 'corto' },
+  /* 1 hamaca 0 */ { comportamiento: 'hamaca', asiento: 0, escala: 0.95, orden: 5, pelo: 'colitas' },
+  /* 2 hamaca 1 */ { comportamiento: 'hamaca', asiento: 1, escala: 1.0, orden: 2, pelo: 'rulos' },
+  /* 3 arenero  */ { comportamiento: 'salta', posicion: [2.5, 0, -1.6], escala: 0.85, orden: 6, mira: [0, 0, 0] },
+  /* 4 burbujas */ { comportamiento: 'salta', posicion: [3.4, 0, -2.3], escala: 0.9, pelo: 'largo', mira: [0, 0, 0] },
+  /* 5 */ { comportamiento: 'corre', centro: [0, 0, -6.8], radio: 2.0, velocidad: 0.9, escala: 1.1, orden: 3 },
+  /* 6 */ { comportamiento: 'corre', centro: [0, 0, -6.8], radio: 2.0, velocidad: 0.9, fase: 2.1, escala: 1.0 },
+  /* 7 */ { comportamiento: 'corre', centro: [0, 0, -6.8], radio: 2.0, velocidad: 0.9, fase: 4.2, escala: 1.15, orden: 8 },
+  /* 8 */ { comportamiento: 'corre', centro: [-1.7, 0, -1.7], radio: 1.0, velocidad: -1.3, escala: 0.9, orden: 7 },
+  /* 9 */ { comportamiento: 'corre', centro: [-1.7, 0, -1.7], radio: 1.0, velocidad: -1.3, fase: 3.1, escala: 0.95 },
+  /* 10 */ { comportamiento: 'corre', centro: [2.6, 0, -7.2], radio: 0.9, velocidad: 0.5, fase: 0, escala: 1.0, orden: 1 },
+  /* 11 */ { comportamiento: 'corre', centro: [2.6, 0, -7.2], radio: 0.9, velocidad: 0.5, fase: Math.PI / 2, escala: 0.9 },
+  /* 12 */ { comportamiento: 'corre', centro: [2.6, 0, -7.2], radio: 0.9, velocidad: 0.5, fase: Math.PI, escala: 1.05 },
+  /* 13 */ { comportamiento: 'corre', centro: [2.6, 0, -7.2], radio: 0.9, velocidad: 0.5, fase: (3 * Math.PI) / 2, escala: 0.95 },
+  /* 14 */ { comportamiento: 'salta', posicion: [-1.4, 0, -4.6], escala: 1.0, mira: [0, 0, 0] },
+  /* 15 */ { comportamiento: 'corre', centro: [4.6, 0, -3.6], radio: 0.8, velocidad: 1.4, escala: 0.85 },
 ];
+const INDICES = { pasador: 0, hamaca: 1, burbujas: 4, publicoBasquet: [14, 9] };
 
 async function iniciar() {
   const resp = await fetch('datos/natalidad.json');
@@ -51,15 +57,30 @@ async function iniciar() {
   document.body.appendChild(renderer.domElement);
 
   const escena = new THREE.Scene();
+  // El "rig" es el lugar del jugador en la plaza: la cámara y las manos van adentro.
+  const rig = new THREE.Group();
+  rig.name = 'Jugador';
+  escena.add(rig);
   const camara = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 80);
-  const camaraEscritorio = () => { camara.position.set(0, 1.55, 0.9); camara.lookAt(0, 1.1, -3); };
+  const camaraEscritorio = () => { camara.position.set(0, 1.55, 0.9); camara.rotation.set(-0.1, 0, 0); };
   camaraEscritorio();
-  escena.add(camara);
+  rig.add(camara);
 
-  crearPlaza(escena, { mesa: false, estacion: false });
+  // Fundido a negro (esfera alrededor de la cabeza), para cambiar de lugar sin marear.
+  const fundidoMat = new THREE.MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0, side: THREE.BackSide, depthTest: false, depthWrite: false });
+  const esferaFundido = new THREE.Mesh(new THREE.SphereGeometry(0.4, 12, 8), fundidoMat);
+  esferaFundido.renderOrder = 999;
+  esferaFundido.visible = false;
+  camara.add(esferaFundido);
+  const fundido = (valor) => { fundidoMat.opacity = valor; esferaFundido.visible = valor > 0.001; };
+
+  // Sin árboles en la cancha de básquet ni detrás del panel de las hamacas.
+  crearPlaza(escena, { mesa: false, estacion: false, sinArboles: [[-6.5, 0.3, 2.3], [-1.9, -5.85, 2.0]] });
   const hamacas = new Hamacas(escena, [-3.3, 0, -5.0], 2);
   crearTobogan(escena, [3.6, 0, -4.8]);
   crearArenero(escena, [3.0, 0, -1.9]);
+  const aro = crearAro(escena, [-6.5, 0, -1.4], 0);
+  const burbujas = new Burbujas(escena);
 
   const chicos = new Chicos(escena, CHICOS.slice(0, datos.chicos));
   const ordenSalida = CHICOS.map((c, i) => [c.orden ?? 100 + i, i]).sort((a, b) => a[0] - b[0]).map(([, i]) => i);
@@ -68,7 +89,7 @@ async function iniciar() {
   const pelota = new Pelota(escena, ambiente);
   const panel = new Panel(escena, { posicion: [0, 2.35, -4.0], ancho: 2.3, alto: 0.95 });
 
-  // Botón Reiniciar sobre un pedestal, al alcance de la mano.
+  // Botón Reiniciar sobre un pedestal (se ubica frente al jugador al final).
   const pedestal = malla(new THREE.CylinderGeometry(0.12, 0.16, 0.85, 8), '#d9cfbf');
   pedestal.position.set(0, 0.425, -0.75);
   pedestal.visible = false;
@@ -82,24 +103,31 @@ async function iniciar() {
   botonReiniciar.visible = false;
   escena.add(botonReiniciar);
 
+  const posicionJugador = (destino = new THREE.Vector3()) => camara.getWorldPosition(destino);
+
   const manos = new Manos({
-    renderer, escena, camara,
+    renderer, escena, camara, padre: rig,
     residuos: () => [pelota],
     botones: () => [botonReiniciar],
-    alSoltar: () => guion.alSoltarPelota(),
+    alSoltar: (p) => guion.alSoltarPelota(p),
   });
 
-  const guion = new Guion({
-    datos, chicos, pelota, panel, ambiente, hamacas, camara, ordenSalida,
+  const ctx = {
+    datos, escena, rig, chicos, pelota, manos, panel, ambiente, hamacas, aro, burbujas, ordenSalida,
+    indices: INDICES, fundido, posicionJugador,
     alFin: () => { botonReiniciar.visible = true; pedestal.visible = true; },
-  });
+  };
+  const guion = new Guion(ctx);
 
-  // Empieza al entrar en VR, o con el primer clic en la PC.
   const botonVR = crearBotonVR(renderer, { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'] }, mostrarAviso);
   botonVR.addEventListener('click', () => ambiente.activar());
   renderer.xr.addEventListener('sessionstart', () => guion.comenzar());
   renderer.xr.addEventListener('sessionend', camaraEscritorio);
-  renderer.domElement.addEventListener('pointerdown', () => guion.comenzar());
+  renderer.domElement.addEventListener('pointerdown', () => {
+    guion.comenzar();
+    // En la PC, en el capítulo de la hamaca, un clic empuja.
+    if (guion.fase === 'capitulo' && guion.capitulo.empujarConMouse) guion.capitulo.empujarConMouse();
+  });
 
   window.addEventListener('resize', () => {
     camara.aspect = window.innerWidth / window.innerHeight;
@@ -107,37 +135,30 @@ async function iniciar() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
-  // Atajar la pelota en el aire: si la mano está cerrada (gatillo, grip o pellizco)
-  // y la pelota pasa cerca, queda agarrada. Hace mucho más fácil atajar en VR.
-  const atajar = () => {
-    if (pelota.estado !== 'lanzada' && pelota.estado !== 'cayendo') return;
-    for (const mano of manos.manos) {
-      if (!mano.presionados || mano.agarrado) continue;
-      if (manos.puntoDeAgarre(mano).distanceTo(pelota.raiz.position) < 0.3) {
-        manos.agarrar(mano, pelota, false);
-        ambiente.atajada();
-        return;
-      }
-    }
-  };
-
   let anterior = 0;
   renderer.setAnimationLoop((ms) => {
     const t = ms / 1000;
     const dt = Math.min(0.05, anterior ? t - anterior : 0);
     anterior = t;
-    manos.actualizar(t);
-    atajar();
+    manos.actualizar(t, dt);
+    if (manos.atajar() === pelota) ambiente.atajada();
     pelota.actualizar(dt);
     guion.actualizar(dt);
     hamacas.actualizar(t, dt);
     chicos.actualizar(t, dt, hamacas);
+    burbujas.actualizar(t, dt);
     ambiente.actualizar(dt, guion.presentes);
+    // El botón Reiniciar aparece frente al jugador, donde esté.
+    if (botonReiniciar.visible) {
+      const frente = rig.localToWorld(new THREE.Vector3(0, 0, -0.75));
+      pedestal.position.set(frente.x, 0.425, frente.z);
+      botonReiniciar.position.set(frente.x, 0.87, frente.z);
+    }
     renderer.render(escena, camara);
   });
 
   document.getElementById('cargando')?.remove();
-  window.__juego = { THREE, renderer, escena, camara, chicos, pelota, panel, guion, manos, botonReiniciar };
+  window.__juego = { THREE, renderer, escena, rig, camara, chicos, pelota, panel, guion, manos, botonReiniciar, hamacas, aro, burbujas, ctx };
 }
 
 console.info(`La plaza que se vacía ${VERSION}`);

@@ -61,4 +61,7 @@ export class Ambiente extends Sonido {
   tic() { this.nota(1800, 0, 0.04, 'square', 0.04); this.nota(1200, 0.5, 0.04, 'square', 0.03); }
   rebote(fuerza = 0.5) { this.nota(110, 0, 0.12, 'sine', 0.15 * fuerza + 0.05); }
   atajada() { this.nota(220, 0, 0.08, 'sine', 0.12); }
+  /** "Risa" sintetizada: notas agudas que suben (provisional, ideal: grabación real). */
+  risa() { [988, 1175, 1319, 1568].forEach((f, i) => this.nota(f, i * 0.07, 0.09, 'triangle', 0.06)); }
+  pop() { this.nota(1400 + Math.random() * 600, 0, 0.05, 'sine', 0.08); }
 }

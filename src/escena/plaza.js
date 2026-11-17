@@ -13,7 +13,13 @@ import { texturaTexto } from './textos.js';
  * Presupuesto: pocos draw calls (árboles y edificios con InstancedMesh),
  * sin sombras en tiempo real ni transparencias.
  */
-export function crearPlaza(escena, { mesa = true, estacion = true } = {}) {
+/**
+ * @param {object} [opciones]
+ * @param {boolean} [opciones.mesa] mesa del juego de reciclaje
+ * @param {boolean} [opciones.estacion] Estación Saludable
+ * @param {number[][]} [opciones.sinArboles] zonas [x, z, radio] donde no van árboles (canchas, paneles…)
+ */
+export function crearPlaza(escena, { mesa = true, estacion = true, sinArboles = [] } = {}) {
   const plaza = new THREE.Group();
   plaza.name = 'Plaza';
 
@@ -41,7 +47,7 @@ export function crearPlaza(escena, { mesa = true, estacion = true } = {}) {
 
   if (mesa) plaza.add(crearMesa());
   if (estacion) plaza.add(crearEstacionSaludable());
-  plaza.add(crearArboles());
+  plaza.add(crearArboles(sinArboles));
   plaza.add(crearEdificios());
   for (const [x, z, rot] of [[-3.2, 1.5, Math.PI / 2], [3.2, 1.5, -Math.PI / 2], [0, 3.6, Math.PI]]) {
     const banco = crearBanco();
@@ -105,14 +111,16 @@ function crearEstacionSaludable() {
   return est;
 }
 
-function crearArboles() {
+function crearArboles(sinArboles = []) {
   const grupo = new THREE.Group();
   grupo.name = 'Arboles';
   const posiciones = [];
   for (let i = 0; i < 18; i++) {
     const ang = (i / 18) * Math.PI * 2 + 0.3 * Math.sin(i * 7);
     const radio = 7 + (i % 3) * 2.5;
-    posiciones.push([Math.cos(ang) * radio, Math.sin(ang) * radio, 0.8 + (i % 4) * 0.15]);
+    const x = Math.cos(ang) * radio, z = Math.sin(ang) * radio;
+    if (sinArboles.some(([zx, zz, zr]) => Math.hypot(x - zx, z - zz) < zr)) continue;
+    posiciones.push([x, z, 0.8 + (i % 4) * 0.15]);
   }
   const tronco = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.12, 0.16, 1.6, 5), material('#7a5232'), posiciones.length);
   const copaGeo = mergeGeometries([

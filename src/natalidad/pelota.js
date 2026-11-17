@@ -25,6 +25,10 @@ export class Pelota {
     this.estado = 'reposo';
     this.sonido = sonido;
     this.id = 'pelota';
+    this.atajable = true; // se puede atajar en el aire con la palma o el control
+    this.radioAgarre = 0.22; // fácil de agarrar de cerca (también del piso)
+    /** Colisiones extra que agregan los juegos (por ejemplo, el tablero de básquet). */
+    this.colisiones = [];
   }
 
   get agarrable() {
@@ -55,6 +59,7 @@ export class Pelota {
     // Rueda: gira según el desplazamiento horizontal.
     this.raiz.rotation.x += (v.z * dt) / this.radio;
     this.raiz.rotation.z -= (v.x * dt) / this.radio;
+    for (const colision of this.colisiones) colision(p, v, this.radio);
     if (p.y <= this.radio) {
       p.y = this.radio;
       if (v.y < -0.8) this.sonido?.rebote(Math.min(1, -v.y / 6));

@@ -1,43 +1,20 @@
 {
-  "_comentario": "Textos, tiempos y datos de 'La plaza que se vacía'. PENDIENTE DE VALIDACIÓN: confirmar con el área / IDECBA la serie de nacimientos de la Ciudad y revisar los textos con comunicación institucional.",
-  "version": 1,
+  "_comentario": "Textos, capítulos, tiempos y datos de 'La plaza que se vacía'. PENDIENTE DE VALIDACIÓN: confirmar con el área / IDECBA la serie de nacimientos de la Ciudad y revisar los textos con comunicación institucional.",
+  "version": 2,
   "chicos": 16,
   "tiempos": {
-    "_comentario": "Segundos. La parte 1 dura unos 2 minutos; la parte 2 (¿Qué hace falta?) completará los 5.",
-    "juego": 40,
-    "porAnio": 6,
-    "esperaTiroFinal": 14,
+    "_comentario": "Segundos. porAnio: cuánto dura cada año en las transiciones. dato: cuánto se muestra el dato final.",
+    "porAnio": 1.3,
     "dato": 12
-  },
-  "anios": {
-    "_comentario": "Índice de nacimientos respecto de 2014 (1 = igual que 2014). Valores ILUSTRATIVOS que reproducen una caída cercana al 50 % (Ciudad: entre -51 % y -53 % según UNICEF / Univ. Austral). Reemplazar por la serie oficial del IDECBA.",
-    "serie": [
-      { "anio": 2014, "indice": 1.0 },
-      { "anio": 2015, "indice": 0.97 },
-      { "anio": 2016, "indice": 0.92 },
-      { "anio": 2017, "indice": 0.86 },
-      { "anio": 2018, "indice": 0.8 },
-      { "anio": 2019, "indice": 0.72 },
-      { "anio": 2020, "indice": 0.64 },
-      { "anio": 2021, "indice": 0.6 },
-      { "anio": 2022, "indice": 0.56 },
-      { "anio": 2023, "indice": 0.52 },
-      { "anio": 2024, "indice": 0.48 }
-    ]
   },
   "textos": {
     "inicio": {
       "titulo": "Plaza porteña, 2014",
-      "cuerpo": "Una tarde cualquiera. Los chicos juegan. Uno te quiere pasar la pelota: agarrala y devolvésela.",
-      "pie": "Agarrás con el gatillo, el botón lateral o pellizcando con la mano"
+      "cuerpo": "Una tarde cualquiera. Los chicos juegan. Uno te quiere pasar la pelota: atajala y devolvésela.",
+      "pie": "Agarrás cerrando la mano, con el gatillo o con el botón lateral"
     },
-    "agarrala": "Agarrá la pelota y tirásela.",
     "tiempo": {
       "cuerpo": "Pasan los años."
-    },
-    "tiroFinal": {
-      "titulo": "2024",
-      "cuerpo": "Tirá la pelota."
     },
     "dato": {
       "titulo": "2014 → 2024",
@@ -47,8 +24,95 @@
     "continuara": {
       "titulo": "¿Qué hace falta?",
       "cuerpo": "Tener hijos es una decisión de cada persona. Que quien quiera, pueda: eso se acompaña entre todos.",
-      "pie": "Parte 2 en construcción · Apuntá a Reiniciar y apretá el gatillo"
+      "pie": "Apuntá a Reiniciar y apretá el gatillo (o pellizcá)"
     },
     "reiniciar": "Reiniciar"
+  },
+  "capitulos": [
+    {
+      "juego": "pelota",
+      "anio": 2014,
+      "duracion": 45,
+      "cuerpo": "Una tarde cualquiera. Un chico te quiere pasar la pelota: atajala y devolvésela.",
+      "pie": "Agarrás cerrando la mano, con el gatillo o con el botón lateral",
+      "agarrala": "Agarrá la pelota y tirásela."
+    },
+    {
+      "juego": "basquet",
+      "anio": 2016,
+      "duracion": 45,
+      "cuerpo": "¡A jugar al básquet! Tirá la pelota al aro.",
+      "pie": "Apuntá al aro y soltá la pelota con un poco de fuerza"
+    },
+    {
+      "juego": "hamaca",
+      "anio": 2019,
+      "duracion": 35,
+      "cuerpo": "Empujá la hamaca: tocala cuando se acerca a vos.",
+      "pie": "La hamaca de al lado ya está vacía"
+    },
+    {
+      "juego": "burbujas",
+      "anio": 2022,
+      "duracion": 30,
+      "cuerpo": "¡Burbujas! Reventalas con las manos.",
+      "pie": ""
+    },
+    {
+      "juego": "final",
+      "anio": 2024,
+      "duracion": 14,
+      "cuerpo": "Tirá la pelota.",
+      "pie": ""
+    }
+  ],
+  "anios": {
+    "_comentario": "Índice de nacimientos respecto de 2014 (1 = igual que 2014). Valores ILUSTRATIVOS que reproducen una caída cercana al 50 % (Ciudad: entre -51 % y -53 % según UNICEF / Univ. Austral). Reemplazar por la serie oficial del IDECBA.",
+    "serie": [
+      {
+        "anio": 2014,
+        "indice": 1.0
+      },
+      {
+        "anio": 2015,
+        "indice": 0.97
+      },
+      {
+        "anio": 2016,
+        "indice": 0.92
+      },
+      {
+        "anio": 2017,
+        "indice": 0.86
+      },
+      {
+        "anio": 2018,
+        "indice": 0.8
+      },
+      {
+        "anio": 2019,
+        "indice": 0.72
+      },
+      {
+        "anio": 2020,
+        "indice": 0.64
+      },
+      {
+        "anio": 2021,
+        "indice": 0.6
+      },
+      {
+        "anio": 2022,
+        "indice": 0.56
+      },
+      {
+        "anio": 2023,
+        "indice": 0.52
+      },
+      {
+        "anio": 2024,
+        "indice": 0.48
+      }
+    ]
   }
 }
