@@ -157,6 +157,38 @@ function verificar(condicion, descripcion) {
     const estados = await ev(() => __juego.residuos.map((x) => x.estado));
     verificar(r.puntaje === 0 && estados.every((e) => e === 'mesa'), 'reinicia: puntaje en 0 y residuos en la mesa');
 
+    // 7) Seguimiento de manos: agarrar con un pellizco y soltar abriendo los dedos.
+    await ev(() => { __dispositivoXR.primaryInputMode = 'hand'; });
+    await esperar(400);
+    const conManos = await ev(() => __juego.manos.manos.some((m) => m.fuente && m.fuente.hand));
+    verificar(conManos, 'el juego detecta las manos (hand tracking) en lugar de los controles');
+    // Ubica la mano derecha para que el punto de pellizco quede sobre el objetivo.
+    const pellizcarEn = async (destino) => {
+      for (let k = 0; k < 3; k++) {
+        await ev((d) => {
+          const m = __juego.manos.manos.find((x) => x.fuente && x.fuente.handedness === 'right');
+          const actual = __juego.manos.puntoDeAgarre(m);
+          const h = __dispositivoXR.hands.right;
+          h.position.set(h.position.x + d[0] - actual.x, h.position.y + d[1] - actual.y, h.position.z + d[2] - actual.z);
+        }, destino);
+        await esperar(120);
+      }
+    };
+    const posBotella = await ev(() => __prueba.posicion('botella'));
+    await ev(() => { const h = __dispositivoXR.hands.right; h.position.set(0.2, 1.0, -0.3); });
+    await esperar(200);
+    await pellizcarEn(posBotella);
+    await ev(() => __dispositivoXR.hands.right.updatePinchValue(1));
+    await esperar(300);
+    verificar((await ev(() => __prueba.estado('botella'))) === 'agarrado', 'agarra la botella pellizcando con la mano');
+    await pellizcarEn(sobre(bocaVerde));
+    await esperar(200);
+    await ev(() => __dispositivoXR.hands.right.updatePinchValue(0));
+    await esperar(900);
+    r = await ev(() => __prueba.resumen());
+    verificar(r.aciertos === 1 && (await ev(() => __prueba.estado('botella'))) === 'clasificado', 'con la mano: botella al verde = correcto');
+    await capturar('4-manos.png');
+
     const info = await ev(() => __juego.renderer.info.render);
     console.log(`Render: ${info.calls} draw calls, ${info.triangles} triángulos por frame (estéreo)`);
   } catch (e) {

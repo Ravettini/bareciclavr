@@ -71,8 +71,17 @@ ve el servidor de tu PC como si fuera `localhost`.
 | Soltar o tirar | Soltar el botón (el objeto conserva el impulso de la mano) |
 | Agarrar a distancia | Apuntar con el rayo y apretar: el objeto viene a la mano (sirve para jugar sentado) |
 | Reiniciar | Al terminar, apuntar al botón **Reiniciar** y apretar el gatillo |
+| **Con las manos** (sin controles) | Pellizcar índice y pulgar cerca del residuo para agarrarlo; abrir los dedos para soltarlo. Apuntando con el rayo y pellizcando se agarra a distancia o se presiona Reiniciar |
+
+Para usar las manos, el seguimiento de manos tiene que estar activado en el Quest
+(Configuración → Movimiento → Seguimiento de manos). Basta con dejar los controles apoyados.
 
 Para jugar no hace falta caminar: se puede jugar de pie o sentado.
+
+## Si algo no funciona en el visor
+
+Si el juego no carga o no puede entrar en VR, aparece un recuadro naranja arriba con el motivo
+y la versión del juego. Una foto de ese recuadro alcanza para diagnosticar el problema.
 
 ## Reglas y textos (para revisión institucional)
 
@@ -109,7 +118,7 @@ src/main.js             arma la escena y conecta todo
 src/config.js           medidas de la escena (mesa, contenedores, panel)
 src/logica/             reglas y partida (sin 3D, con tests unitarios)
 src/escena/             plaza, contenedores, residuos, panel de mensajes, botón
-src/interaccion/        agarrar y soltar (controles y mouse) y física mínima
+src/interaccion/        agarrar y soltar (controles, manos y mouse), botón VR y física mínima
 src/feedback/           sonidos sintetizados (sin archivos)
 vendor/                 three.js 0.186.1 e IWER 2.7.0 (copiados con npm run vendor)
 sw.js                   service worker (modo offline)

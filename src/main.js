@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { CONFIG } from './config.js';
 import { cargarReglas } from './logica/reglas.js';
 import { Partida } from './logica/partida.js';
@@ -11,6 +10,8 @@ import { crearBoton } from './escena/boton.js';
 import { Manos } from './interaccion/manos.js';
 import { actualizarFisica } from './interaccion/fisica.js';
 import { Sonido } from './feedback/sonido.js';
+import { crearBotonVR } from './interaccion/botonVR.js';
+import { mostrarAviso, VERSION } from './avisos.js';
 
 /**
  * Punto de entrada: arma la escena, conecta la interacción con la lógica de la partida
@@ -102,10 +103,9 @@ async function iniciar() {
   renderer.domElement.addEventListener('pointerdown', () => sonido.activar());
 
   // ---------- Botón "Entrar en VR" ----------
-  const botonVR = VRButton.createButton(renderer, { optionalFeatures: ['local-floor', 'bounded-floor'] });
-  traducirBotonVR(botonVR);
+  // "hand-tracking" es opcional: permite jugar con las manos, pero no es obligatorio.
+  const botonVR = crearBotonVR(renderer, { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'] }, mostrarAviso);
   botonVR.addEventListener('click', () => sonido.activar());
-  document.body.appendChild(botonVR);
   renderer.xr.addEventListener('sessionstart', () => sonido.activar());
   renderer.xr.addEventListener('sessionend', posicionarCamaraEscritorio);
 
@@ -138,16 +138,9 @@ async function iniciar() {
   window.__juego = { THREE, renderer, escena, camara, partida, residuos, contenedores, panel, botonReiniciar, manos, reiniciar };
 }
 
-/** El botón de three.js viene en inglés: lo pasamos a español. */
-function traducirBotonVR(boton) {
-  const textos = { 'ENTER VR': 'ENTRAR EN VR', 'EXIT VR': 'SALIR DE VR', 'VR NOT SUPPORTED': 'VR NO DISPONIBLE · USÁ EL MOUSE', 'VR NOT ALLOWED': 'VR NO PERMITIDA' };
-  const traducir = () => { const t = textos[boton.textContent.trim()]; if (t) boton.textContent = t; };
-  new MutationObserver(traducir).observe(boton, { childList: true, characterData: true, subtree: true });
-  traducir();
-}
-
+console.info(`Buenos Aires Recicla VR ${VERSION}`);
 iniciar().catch((e) => {
   console.error(e);
-  const div = document.getElementById('cargando');
-  if (div) div.textContent = 'Error al iniciar: ' + e.message;
+  document.getElementById('cargando')?.remove();
+  mostrarAviso(`Error al iniciar: ${e.message}`);
 });

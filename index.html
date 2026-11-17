@@ -11,7 +11,39 @@
     html, body { margin: 0; height: 100%; overflow: hidden; background: #a9d6f5; font-family: system-ui, Roboto, Arial, sans-serif; }
     canvas { display: block; touch-action: none; }
     #cargando { position: fixed; inset: 0; display: grid; place-items: center; color: #1f6f3a; font-size: 1.4rem; }
+    #botonVR { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 18px 36px;
+      font: bold 22px system-ui, Roboto, Arial, sans-serif; color: #fff; background: #1f6f3a; border: 3px solid #f6c700;
+      border-radius: 14px; cursor: pointer; z-index: 10; }
+    #botonVR:disabled { background: #6b7d70; border-color: #ccc; cursor: default; }
+    #avisos { position: fixed; top: 12px; left: 12px; right: 12px; z-index: 20; padding: 12px 16px; background: #fff3e0;
+      border: 2px solid #d9822b; border-radius: 10px; color: #5a2e00; font: 16px system-ui, Roboto, Arial, sans-serif; }
+    #avisos::after { content: "Versión " attr(data-version); display: block; margin-top: 6px; font-size: 13px; color: #8a6a4a; }
   </style>
+  <script>
+    // Muestra en pantalla cualquier error (también los de carga de archivos) para poder reportarlo.
+    window.mostrarAviso = function (texto) {
+      var caja = document.getElementById('avisos');
+      if (!caja) {
+        caja = document.createElement('div');
+        caja.id = 'avisos';
+        caja.dataset.version = 'v0.2.0';
+        (document.body || document.documentElement).appendChild(caja);
+      }
+      var linea = document.createElement('div');
+      linea.textContent = texto;
+      caja.appendChild(linea);
+    };
+    window.addEventListener('error', function (e) {
+      var origen = e.target && e.target !== window ? (e.target.src || e.target.href || '') : (e.filename || '');
+      window.mostrarAviso('Error: ' + (e.message || 'no se pudo cargar') + ' ' + origen.split('/').slice(-2).join('/') + (e.lineno ? ':' + e.lineno : ''));
+    }, true);
+    window.addEventListener('unhandledrejection', function (e) {
+      window.mostrarAviso('Error: ' + ((e.reason && e.reason.message) || e.reason));
+    });
+    setTimeout(function () {
+      if (!window.__juego) window.mostrarAviso('El juego no terminó de cargar. Navegador: ' + navigator.userAgent);
+    }, 20000);
+  </script>
   <!-- three.js se sirve desde /vendor: el juego no usa internet. -->
   <script type="importmap">
     { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }

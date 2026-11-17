@@ -1,8 +1,10 @@
 import * as THREE from 'three';
+import { XRHandModelFactory } from 'three/addons/webxr/XRHandModelFactory.js';
 import { CONFIG } from '../config.js';
 
 /**
  * Agarrar y soltar con los controles del Quest 2 (gatillo o botón lateral),
+ * con las manos (seguimiento de manos: pellizcar índice y pulgar)
  * y con el mouse cuando se juega en una PC sin visor.
  *
  * - Agarre cercano: si la mano toca un residuo, lo toma.
@@ -25,6 +27,7 @@ export class Manos {
   constructor({ renderer, escena, camara, residuos, botones, alSoltar }) {
     Object.assign(this, { renderer, escena, camara, residuos, botones, alSoltar });
     this.raycaster = new THREE.Raycaster();
+    this.fabricaManos = new XRHandModelFactory();
     this.manos = [];
     for (let i = 0; i < 2; i++) this.manos.push(this.crearManoXR(i));
     this.manoMouse = this.crearManoMouse();
@@ -36,8 +39,12 @@ export class Manos {
     const { renderer, escena } = this;
     const control = renderer.xr.getController(indice); // espacio del rayo
     const agarre = renderer.xr.getControllerGrip(indice); // espacio de la empuñadura
-    escena.add(control, agarre);
-    agarre.add(modeloControl());
+    const manoReal = renderer.xr.getHand(indice); // articulaciones de la mano (hand tracking)
+    escena.add(control, agarre, manoReal);
+    const modelo = modeloControl();
+    agarre.add(modelo);
+    // Esferas en las articulaciones: no descarga nada (el modelo "mesh" sí lo haría).
+    manoReal.add(this.fabricaManos.createHandModel(manoReal, 'spheres'));
 
     const rayo = new THREE.Line(
       new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]),
@@ -46,10 +53,11 @@ export class Manos {
     rayo.visible = false;
     control.add(rayo);
 
-    const mano = { tipo: 'xr', control, rayo, fuente: null, agarrado: null, presionados: 0, historial: [] };
+    const mano = { tipo: 'xr', control, manoReal, rayo, fuente: null, agarrado: null, presionados: 0, historial: [] };
     control.addEventListener('connected', (e) => {
       mano.fuente = e.data;
       rayo.visible = e.data.targetRayMode === 'tracked-pointer';
+      modelo.visible = !e.data.hand; // con las manos no se dibuja el control
     });
     control.addEventListener('disconnected', () => {
       this.soltar(mano);
@@ -75,7 +83,7 @@ export class Manos {
   /** Intenta presionar un botón o agarrar un residuo con la mano. */
   presionar(mano) {
     if (mano.agarrado) return;
-    const pos = mano.control.getWorldPosition(new THREE.Vector3());
+    const pos = this.puntoDeAgarre(mano);
 
     // 1) Agarre cercano.
     let elegido = null;
@@ -92,6 +100,23 @@ export class Manos {
     if (!impacto) return;
     if (impacto.boton) impacto.boton.userData.alPresionar();
     else this.agarrar(mano, impacto.residuo, true);
+  }
+
+  /**
+   * Dónde "agarra" la mano: con controles, el origen del rayo; con las manos,
+   * el punto medio entre las puntas del índice y del pulgar (el pellizco).
+   */
+  puntoDeAgarre(mano) {
+    const p = new THREE.Vector3();
+    const indice = mano.manoReal?.joints?.['index-finger-tip'];
+    const pulgar = mano.manoReal?.joints?.['thumb-tip'];
+    if (mano.fuente?.hand && indice && pulgar && indice.visible !== false) {
+      const q = new THREE.Vector3();
+      indice.getWorldPosition(p);
+      pulgar.getWorldPosition(q);
+      return p.add(q).multiplyScalar(0.5);
+    }
+    return mano.control.getWorldPosition(p);
   }
 
   /** Primer residuo agarrable o botón que apunta el rayo de la mano. */
@@ -121,9 +146,10 @@ export class Manos {
     for (const m of [...this.manos, this.manoMouse]) if (m.agarrado === residuo) this.soltar(m, false);
     if (aDistancia) {
       // El objeto "vuela" a la mano: lo ubicamos un poco delante del control.
-      const destino = mano.tipo === 'xr'
-        ? new THREE.Vector3(0, 0, -0.06).applyMatrix4(mano.control.matrixWorld)
-        : mano.control.position.clone();
+      let destino;
+      if (mano.tipo !== 'xr') destino = mano.control.position.clone();
+      else if (mano.fuente?.hand) destino = this.puntoDeAgarre(mano);
+      else destino = new THREE.Vector3(0, 0, -0.06).applyMatrix4(mano.control.matrixWorld);
       residuo.raiz.position.copy(destino);
     }
     mano.control.attach(residuo.raiz);

@@ -4,16 +4,18 @@
  * sin conexión se usa lo guardado en la última visita.
  * Al agregar archivos nuevos (modelos, sonidos), sumalos a ARCHIVOS y subí VERSION.
  */
-const VERSION = 'ba-recicla-v1';
+const VERSION = 'ba-recicla-v2';
 const ARCHIVOS = [
   './', 'index.html', 'manifest.webmanifest', 'icono.svg', 'datos/reglas.json',
   'src/arranque.js', 'src/main.js', 'src/config.js',
   'src/logica/reglas.js', 'src/logica/partida.js',
   'src/escena/plaza.js', 'src/escena/materiales.js', 'src/escena/textos.js', 'src/escena/panel.js',
   'src/escena/contenedores.js', 'src/escena/residuos.js', 'src/escena/boton.js',
-  'src/interaccion/manos.js', 'src/interaccion/fisica.js', 'src/feedback/sonido.js',
+  'src/interaccion/manos.js', 'src/interaccion/fisica.js', 'src/interaccion/botonVR.js',
+  'src/feedback/sonido.js', 'src/avisos.js',
   'vendor/three/three.module.js', 'vendor/three/three.core.js',
-  'vendor/three/addons/webxr/VRButton.js', 'vendor/three/addons/loaders/GLTFLoader.js',
+  'vendor/three/addons/webxr/XRHandModelFactory.js', 'vendor/three/addons/webxr/XRHandPrimitiveModel.js',
+  'vendor/three/addons/webxr/XRHandMeshModel.js', 'vendor/three/addons/loaders/GLTFLoader.js',
   'vendor/three/addons/utils/BufferGeometryUtils.js', 'vendor/three/addons/utils/SkeletonUtils.js',
 ];
 
@@ -40,6 +42,6 @@ self.addEventListener('fetch', (e) => {
         }
         return resp;
       })
-      .catch(() => caches.match(e.request, { ignoreSearch: true })),
+      .catch(() => caches.match(e.request, { ignoreSearch: true }).then((r) => r || Response.error())),
   );
 });
