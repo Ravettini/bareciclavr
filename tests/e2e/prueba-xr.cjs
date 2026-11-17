@@ -33,7 +33,7 @@ function verificar(condicion, descripcion) {
   pagina.on('console', (m) => { if (m.type() === 'error') errores.push(m.text()); });
 
   try {
-    await pagina.goto(`http://localhost:${PUERTO}/?emular=1`);
+    await pagina.goto(`http://localhost:${PUERTO}/reciclaje.html?emular=1`);
     await pagina.waitForFunction(() => window.__juego && window.__dispositivoXR);
     await pagina.getByText('ENTRAR EN VR').click();
     await pagina.waitForFunction(() => __juego.renderer.xr.isPresenting, null, { timeout: 10000 });

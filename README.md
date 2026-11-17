@@ -2,9 +2,12 @@
 
 Experiencias de realidad virtual para jornadas del Gobierno de la Ciudad, en **Meta Quest 2**:
 
+La página de inicio (`index.html`) es un **selector**: se elige la experiencia y después se toca
+**ENTRAR EN VR**. Desde cada experiencia, el botón "← Elegir experiencia" vuelve al inicio.
+
 | Experiencia | Dirección | Estado |
 |---|---|---|
-| **Buenos Aires Recicla**: separar residuos en la Estación Saludable | `/` (`index.html`) | Prueba jugable |
+| **Buenos Aires Recicla**: separar residuos en la Estación Saludable | `/reciclaje.html` | Prueba jugable |
 | **La plaza que se vacía**: la baja de la natalidad (Subsecretaría de Familia y Natalidad) | `/natalidad.html` | Parte 1 jugable |
 
 ## La plaza que se vacía (parte 1)
@@ -50,7 +53,7 @@ Requiere Node.js 18 o más nuevo.
 npm run serve
 ```
 
-Abrí <http://localhost:8080>. Con el mouse podés agarrar los residuos y arrastrarlos a los
+Abrí <http://localhost:8080> y elegí la experiencia. Con el mouse podés agarrar los residuos y arrastrarlos a los
 contenedores. Si abrís <http://localhost:8080/?emular=1> se simula un Quest 2 (emulador IWER de
 Meta): tocá **ENTRAR EN VR** para ver el modo VR en la pantalla.
 
@@ -139,7 +142,8 @@ se puede reemplazar por un único `.glb` de la plaza.
 ## Estructura
 
 ```
-index.html              página y "import map" (three.js local)
+index.html              selector de experiencias
+reciclaje.html          página de Buenos Aires Recicla ("import map" con three.js local)
 datos/reglas.json       reglas, puntajes y textos editables
 natalidad.html          página de La plaza que se vacía
 datos/natalidad.json    textos, tiempos y serie de nacimientos (a validar)
