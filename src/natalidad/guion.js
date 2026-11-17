@@ -65,6 +65,7 @@ export class Guion {
     if (this.fase !== 'espera') return;
     this.pasarA('capitulo');
     this.capitulo.iniciar();
+    setTimeout(() => this.ctx.ambiente.voz('inicio'), 600);
   }
 
   pasarA(fase) {
@@ -104,7 +105,10 @@ export class Guion {
         break;
       case 'aclara':
         ctx.fundido(1 - Math.min(1, this.reloj / 0.8));
-        if (this.reloj >= 0.8) { this.pasarA('anios'); this.proximoAnio = this.reloj; }
+        if (this.reloj >= 0.8) {
+          this.pasarA('anios');
+          ctx.ambiente.voz('pasanLosAnios');
+        }
         break;
       case 'anios': {
         // Avanzan los años hasta el del capítulo; en cada año se van chicos.
@@ -119,6 +123,7 @@ export class Guion {
         if (this.anio >= meta && this.reloj >= (meta - this.anioDesde) * porAnio + 0.6) {
           this.pasarA('capitulo');
           this.capitulo.iniciar();
+          ctx.ambiente.voz(this.capitulo.def.juego); // "Dos mil dieciséis. ¡A jugar al básquet!…"
         }
         break;
       }
@@ -150,12 +155,14 @@ export class Guion {
     ctx.ambiente.intensidadJuego = 0;
     ctx.ambiente.volumenBase(0.0001, 4);
     ctx.panel.mostrar({ ...this.datos.textos.dato, tono: 'error' });
+    setTimeout(() => ctx.ambiente.voz('dato'), 1500); // después de un silencio
   }
 
   mostrarFin() {
     const ctx = this.ctx;
     ctx.ambiente.volumenBase(0.04, 4);
     ctx.panel.mostrar({ ...this.datos.textos.continuara, tono: 'acierto' });
+    ctx.ambiente.voz('cierre');
     ctx.alFin();
   }
 

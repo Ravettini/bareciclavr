@@ -86,6 +86,7 @@ async function iniciar() {
   const ordenSalida = CHICOS.map((c, i) => [c.orden ?? 100 + i, i]).sort((a, b) => a[0] - b[0]).map(([, i]) => i);
 
   const ambiente = new Ambiente();
+  ambiente.configurarVoces(datos.voces);
   const pelota = new Pelota(escena, ambiente);
   const panel = new Panel(escena, { posicion: [0, 2.35, -4.0], ancho: 2.3, alto: 0.95 });
 

@@ -15,6 +15,68 @@ export class Ambiente extends Sonido {
     super();
     this.base = null;
     this.intensidadJuego = 1;
+    this.volumenBaseActual = 0.06;
+    /** Locución: id → AudioBuffer (se decodifican al activar el audio). */
+    this.voces = {};
+    this.rutasVoces = {};
+    this.vozSonando = null;
+    /** Frases que se reprodujeron (para depuración y pruebas). */
+    this.historialVoces = [];
+  }
+
+  /** Registra los archivos de la locución (datos/natalidad.json → "voces"). */
+  configurarVoces(rutas = {}) {
+    this.rutasVoces = Object.fromEntries(Object.entries(rutas).filter(([k]) => !k.startsWith('_')));
+    this.precargarVoces();
+  }
+
+  async precargarVoces() {
+    if (!this.ctx) return;
+    await Promise.all(Object.entries(this.rutasVoces).map(async ([id, ruta]) => {
+      if (this.voces[id]) return;
+      try {
+        const resp = await fetch(ruta);
+        if (!resp.ok) throw new Error(resp.status);
+        this.voces[id] = await this.ctx.decodeAudioData(await resp.arrayBuffer());
+      } catch (e) {
+        console.warn(`Sin la frase "${id}" (${ruta}):`, e.message || e);
+      }
+    }));
+  }
+
+  activar() {
+    super.activar();
+    this.precargarVoces();
+  }
+
+  /**
+   * Reproduce una frase de la locución. Mientras habla, baja el ambiente; si había otra frase
+   * sonando, la corta. Si el archivo todavía no se decodificó, espera un poco (hasta 3 s).
+   */
+  voz(id, intentos = 15) {
+    if (!this.ctx || !this.rutasVoces[id]) return;
+    const buffer = this.voces[id];
+    if (!buffer) {
+      if (intentos > 0) setTimeout(() => this.voz(id, intentos - 1), 200);
+      return;
+    }
+    try { this.vozSonando?.stop(); } catch { /* ya terminó */ }
+    const fuente = this.ctx.createBufferSource();
+    fuente.buffer = buffer;
+    const g = this.ctx.createGain();
+    g.gain.value = 1;
+    fuente.connect(g).connect(this.ctx.destination);
+    fuente.start();
+    this.vozSonando = fuente;
+    this.historialVoces.push(id);
+    // El ambiente baja mientras habla la voz.
+    this.agacharAmbiente(true);
+    fuente.onended = () => { if (this.vozSonando === fuente) { this.vozSonando = null; this.agacharAmbiente(false); } };
+  }
+
+  agacharAmbiente(hablando) {
+    this.factorVoz = hablando ? 0.25 : 1;
+    if (this.base) this.volumenBase(this.volumenBaseActual * this.factorVoz, 0.4, true);
   }
 
   /** Arranca la base armónica (llamar después de un gesto del usuario). */
@@ -38,7 +100,8 @@ export class Ambiente extends Sonido {
     this.volumenBase(0.06, 2);
   }
 
-  volumenBase(valor, segundos = 1.5) {
+  volumenBase(valor, segundos = 1.5, interno = false) {
+    if (!interno) { this.volumenBaseActual = valor; valor *= this.factorVoz ?? 1; }
     if (!this.base) return;
     const g = this.base.gain;
     const t = this.ctx.currentTime;
@@ -50,7 +113,7 @@ export class Ambiente extends Sonido {
   /** Llamar cada frame: más chicos presentes = más sonidos de juego. */
   actualizar(dt, presentes) {
     if (!this.ctx || this.intensidadJuego <= 0) return;
-    const porSegundo = presentes * 0.22 * this.intensidadJuego;
+    const porSegundo = presentes * 0.22 * this.intensidadJuego * (this.factorVoz ?? 1);
     if (Math.random() < porSegundo * dt) {
       const f = ESCALA[Math.floor(Math.random() * ESCALA.length)];
       this.nota(f, 0, 0.12, 'triangle', 0.035);

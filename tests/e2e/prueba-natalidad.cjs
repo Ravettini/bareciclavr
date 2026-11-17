@@ -99,7 +99,7 @@ const verificar = (ok, texto) => { console.log(`${ok ? '✔' : '✘'} ${texto}`)
     const n = Math.hypot(...hacia);
     const atajada = [cab[0] + (hacia[0] / n) * 0.4, Math.max(0.85, cab[1] - 0.45), cab[2] + (hacia[1] / n) * 0.4];
     await ev((p) => { __prueba.mover('right', p); __prueba.gatillo('right', 1); }, atajada);
-    verificar(await esperarQue(() => __juego.pelota.estado === 'agarrado', 10000), '2014: ataja la pelota con el control');
+    verificar(await esperarQue(() => __juego.pelota.estado === 'agarrado', 16000), '2014: ataja la pelota con el control (después de la presentación)');
     await capturar('n1-2014-atajada.png');
     let devuelta = false;
     for (let i = 0; i < 3 && !devuelta; i++) {
@@ -230,6 +230,15 @@ const verificar = (ok, texto) => { console.log(`${ok ? '✔' : '✘'} ${texto}`)
     await esperar(400);
     const gr = await ev(() => __prueba.guion());
     verificar(gr.juego === 'pelota' && gr.presentes === 16, 'reinicia: plaza llena y capítulo 2014');
+
+    // Locución: las 9 frases sonaron, en orden.
+    const voces = await ev(() => __juego.ctx.ambiente.historialVoces);
+    const esperadas = ['inicio', 'devolvela', 'pasanLosAnios', 'basquet', 'hamaca', 'burbujas', 'final', 'dato', 'cierre'];
+    let k = 0;
+    for (const v of voces) if (v === esperadas[k]) k++;
+    verificar(k === esperadas.length, `suenan las 9 frases de la voz, en orden (${voces.join(', ')})`);
+    const cargadas = await ev(() => Object.keys(__juego.ctx.ambiente.voces).length);
+    verificar(cargadas === 9, `se cargaron los 9 audios de la voz (${cargadas})`);
 
     const dmin = await ev(() => window.__distanciaMinima);
     verificar(dmin >= 0.6, `ningún chico atraviesa al jugador (distancia mínima: ${dmin.toFixed(2)} m)`);

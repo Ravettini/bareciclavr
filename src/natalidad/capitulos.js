@@ -164,6 +164,7 @@ export class CapPelota extends Capitulo {
     const c = this.ubicar(this.ctx.indices.pasador, this.aMundo(0, 0, -3.2));
     this.pasador = new Pasador(this.ctx, c, c.posicion);
     this.pasador.tomarPelota();
+    this.pasador.espera = 7.5; // primero termina la presentación de la voz ("…¡Atajala!")
     this.ctx.pasadorActual = this.pasador;
   }
   actualizar(dt) {
@@ -174,7 +175,11 @@ export class CapPelota extends Capitulo {
       this.aviso = true;
       this.ctx.panel.mostrar({ titulo: String(this.def.anio), cuerpo: this.def.agarrala || 'Agarrá la pelota y tirásela.' });
     }
-    if (this.ctx.pelota.estado === 'agarrado') this.aviso = false;
+    if (this.ctx.pelota.estado === 'agarrado') {
+      this.aviso = false;
+      // La primera vez que la ataja: "¡Muy bien! Ahora, devolvésela."
+      if (!this.felicitado) { this.felicitado = true; this.ctx.ambiente.voz('devolvela'); }
+    }
     if (this.reloj >= this.def.duracion) this.terminado = true;
   }
   terminar() {

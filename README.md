@@ -31,9 +31,16 @@ suelta; si la pelota llega volando a la palma, queda atajada, y se tira con un m
 También sirve pellizcar. **Con controles:** gatillo o botón lateral.
 
 Textos, años y duración de cada capítulo están en [`datos/natalidad.json`](datos/natalidad.json).
+
+**Locución:** 9 frases en `sonidos/voz-*.mp3` (ElevenLabs, voz "Martin Kalbin – Argentinian
+Narrator"). El guion está en [`docs/guion-voz.md`](docs/guion-voz.md). Para regenerarla: se genera el
+guion completo en un solo audio y se corta en frases con la transcripción de cada palabra (Whisper)
+para encontrar los cortes; el volumen se normaliza a −16 LUFS. Mientras habla la voz, el ambiente
+baja. Si falta un archivo, el juego sigue sin esa frase.
+
 **Pendiente:** reemplazar la serie ilustrativa por la oficial del IDECBA, la revisión de
-comunicación institucional, sonido ambiente grabado y locución, y una parte final sobre "¿Qué hace
-falta?" con los programas de la subsecretaría.
+comunicación institucional, sonido ambiente grabado (plaza, risas) y una parte final sobre "¿Qué
+hace falta?" con los programas de la subsecretaría.
 
 ---
 

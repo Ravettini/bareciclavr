@@ -114,5 +114,17 @@
         "indice": 0.48
       }
     ]
+  },
+  "voces": {
+    "_comentario": "Locución (ElevenLabs, voz Martin Kalbin – Argentinian Narrator, Multilingual). Si falta un archivo, el juego sigue sin esa frase. Texto completo en docs/guion-voz.md.",
+    "inicio": "sonidos/voz-01-inicio.mp3",
+    "devolvela": "sonidos/voz-02-devolvela.mp3",
+    "pasanLosAnios": "sonidos/voz-03-pasan-los-anios.mp3",
+    "basquet": "sonidos/voz-04-basquet.mp3",
+    "hamaca": "sonidos/voz-05-hamaca.mp3",
+    "burbujas": "sonidos/voz-06-burbujas.mp3",
+    "final": "sonidos/voz-07-final.mp3",
+    "dato": "sonidos/voz-08-dato.mp3",
+    "cierre": "sonidos/voz-09-cierre.mp3"
   }
 }
