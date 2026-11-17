@@ -1,4 +1,32 @@
-# Buenos Aires Recicla VR
+# Buenos Aires Recicla VR · La plaza que se vacía
+
+Experiencias de realidad virtual para jornadas del Gobierno de la Ciudad, en **Meta Quest 2**:
+
+| Experiencia | Dirección | Estado |
+|---|---|---|
+| **Buenos Aires Recicla**: separar residuos en la Estación Saludable | `/` (`index.html`) | Prueba jugable |
+| **La plaza que se vacía**: la baja de la natalidad (Subsecretaría de Familia y Natalidad) | `/natalidad.html` | Parte 1 jugable |
+
+## La plaza que se vacía (parte 1)
+
+Unos 2 minutos, de pie o sentado, con controles o manos:
+
+1. **2014:** una plaza llena de chicos. Uno le pasa la pelota al jugador: la ataja (con el gatillo
+   o la mano cerrada cuando llega) y se la devuelve. Si la tira mal, el chico la va a buscar.
+2. **Pasan los años:** 2015…2024. Los chicos se van yendo caminando según la serie de nacimientos,
+   las hamacas se frenan y el sonido se apaga. En 2024 queda la mitad.
+3. **Tiro final:** la pelota vuelve rodando sola. El jugador la tira y nadie se la devuelve.
+4. **El dato:** "En diez años, en la Ciudad nacen la mitad de chicos".
+5. **Cierre:** "Tener hijos es una decisión de cada persona. Que quien quiera, pueda" y Reiniciar.
+
+Textos, tiempos y la serie de años están en [`datos/natalidad.json`](datos/natalidad.json).
+**Pendiente:** reemplazar la serie ilustrativa por la oficial del IDECBA, la revisión de
+comunicación institucional, una grabación de sonido ambiente real y una locución, y la parte 2
+("¿Qué hace falta?").
+
+---
+
+## Buenos Aires Recicla
 
 Juego educativo de realidad virtual para **Meta Quest 2**: en una plaza porteña, frente a la
 Estación Saludable, el jugador separa residuos entre el contenedor **verde** (reciclables) y el
@@ -113,6 +141,9 @@ se puede reemplazar por un único `.glb` de la plaza.
 ```
 index.html              página y "import map" (three.js local)
 datos/reglas.json       reglas, puntajes y textos editables
+natalidad.html          página de La plaza que se vacía
+datos/natalidad.json    textos, tiempos y serie de nacimientos (a validar)
+src/natalidad/          plaza que se vacía: chicos, juegos, pelota, sonido y guion
 src/arranque.js         emulador opcional (?emular=1) y modo offline
 src/main.js             arma la escena y conecta todo
 src/config.js           medidas de la escena (mesa, contenedores, panel)

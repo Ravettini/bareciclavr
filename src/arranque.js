@@ -14,4 +14,6 @@ if (params.has('emular')) {
   navigator.serviceWorker.register('sw.js').catch((e) => console.warn('Sin modo offline:', e));
 }
 
-await import('./main.js');
+// Cada página elige su experiencia con <body data-experiencia="...">.
+if (document.body.dataset.experiencia === 'natalidad') await import('./natalidad/main.js');
+else await import('./main.js');

@@ -8,7 +8,7 @@
     "vendor": "node scripts/copiar-vendor.js",
     "serve": "node scripts/servidor.js",
     "test": "node --test tests/unit/*.test.js",
-    "test:e2e": "node tests/e2e/prueba-xr.cjs"
+    "test:e2e": "node tests/e2e/prueba-xr.cjs && node tests/e2e/prueba-natalidad.cjs"
   },
   "devDependencies": {
     "iwer": "2.7.0",

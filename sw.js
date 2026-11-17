@@ -4,15 +4,17 @@
  * sin conexión se usa lo guardado en la última visita.
  * Al agregar archivos nuevos (modelos, sonidos), sumalos a ARCHIVOS y subí VERSION.
  */
-const VERSION = 'ba-recicla-v2';
+const VERSION = 'ba-recicla-v3';
 const ARCHIVOS = [
-  './', 'index.html', 'manifest.webmanifest', 'icono.svg', 'datos/reglas.json',
+  './', 'index.html', 'natalidad.html', 'manifest.webmanifest', 'icono.svg', 'datos/reglas.json', 'datos/natalidad.json',
   'src/arranque.js', 'src/main.js', 'src/config.js',
   'src/logica/reglas.js', 'src/logica/partida.js',
   'src/escena/plaza.js', 'src/escena/materiales.js', 'src/escena/textos.js', 'src/escena/panel.js',
   'src/escena/contenedores.js', 'src/escena/residuos.js', 'src/escena/boton.js',
   'src/interaccion/manos.js', 'src/interaccion/fisica.js', 'src/interaccion/botonVR.js',
   'src/feedback/sonido.js', 'src/avisos.js',
+  'src/natalidad/main.js', 'src/natalidad/guion.js', 'src/natalidad/chicos.js', 'src/natalidad/juegos.js',
+  'src/natalidad/pelota.js', 'src/natalidad/ambiente.js',
   'vendor/three/three.module.js', 'vendor/three/three.core.js',
   'vendor/three/addons/webxr/XRHandModelFactory.js', 'vendor/three/addons/webxr/XRHandPrimitiveModel.js',
   'vendor/three/addons/webxr/XRHandMeshModel.js', 'vendor/three/addons/loaders/GLTFLoader.js',

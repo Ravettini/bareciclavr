@@ -13,7 +13,7 @@ import { texturaTexto } from './textos.js';
  * Presupuesto: pocos draw calls (árboles y edificios con InstancedMesh),
  * sin sombras en tiempo real ni transparencias.
  */
-export function crearPlaza(escena) {
+export function crearPlaza(escena, { mesa = true, estacion = true } = {}) {
   const plaza = new THREE.Group();
   plaza.name = 'Plaza';
 
@@ -39,8 +39,8 @@ export function crearPlaza(escena) {
   sendero.position.set(0, 0.004, 12);
   plaza.add(sendero);
 
-  plaza.add(crearMesa());
-  plaza.add(crearEstacionSaludable());
+  if (mesa) plaza.add(crearMesa());
+  if (estacion) plaza.add(crearEstacionSaludable());
   plaza.add(crearArboles());
   plaza.add(crearEdificios());
   for (const [x, z, rot] of [[-3.2, 1.5, Math.PI / 2], [3.2, 1.5, -Math.PI / 2], [0, 3.6, Math.PI]]) {

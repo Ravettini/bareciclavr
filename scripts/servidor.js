@@ -16,7 +16,7 @@ const tipos = {
   '.png': 'image/png', '.glb': 'model/gltf-binary', '.ogg': 'audio/ogg', '.mp3': 'audio/mpeg',
 };
 // Solo se publican estas carpetas/archivos (nunca node_modules ni tests).
-const permitidos = ['index.html', 'manifest.webmanifest', 'sw.js', 'icono.svg', 'src/', 'datos/', 'vendor/', 'modelos/', 'sonidos/'];
+const permitidos = ['index.html', 'natalidad.html', 'manifest.webmanifest', 'sw.js', 'icono.svg', 'src/', 'datos/', 'vendor/', 'modelos/', 'sonidos/'];
 
 createServer(async (req, res) => {
   try {
