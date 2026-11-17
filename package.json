@@ -1,0 +1,17 @@
+{
+  "name": "ba-recicla-vr",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Buenos Aires Recicla VR — juego educativo WebXR para Meta Quest 2",
+  "type": "module",
+  "scripts": {
+    "vendor": "node scripts/copiar-vendor.js",
+    "serve": "node scripts/servidor.js",
+    "test": "node --test tests/unit/*.test.js",
+    "test:e2e": "node tests/e2e/prueba-xr.cjs"
+  },
+  "devDependencies": {
+    "iwer": "2.7.0",
+    "three": "0.186.1"
+  }
+}

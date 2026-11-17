@@ -1,0 +1,6 @@
+# Vercel publica solo los archivos del juego.
+tests/
+scripts/
+package.json
+package-lock.json
+README.md

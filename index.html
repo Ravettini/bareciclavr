@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Buenos Aires Recicla VR</title>
+  <meta name="theme-color" content="#1f6f3a">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icono.svg" type="image/svg+xml">
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #a9d6f5; font-family: system-ui, Roboto, Arial, sans-serif; }
+    canvas { display: block; touch-action: none; }
+    #cargando { position: fixed; inset: 0; display: grid; place-items: center; color: #1f6f3a; font-size: 1.4rem; }
+  </style>
+  <!-- three.js se sirve desde /vendor: el juego no usa internet. -->
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+  </script>
+</head>
+<body>
+  <div id="cargando">Cargando Buenos Aires Recicla VR…</div>
+  <script type="module" src="src/arranque.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "Buenos Aires Recicla VR",
+  "short_name": "BA Recicla",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#a9d6f5",
+  "theme_color": "#1f6f3a",
+  "lang": "es-AR",
+  "icons": [{ "src": "icono.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

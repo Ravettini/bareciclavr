@@ -1,0 +1,70 @@
+{
+  "_comentario": "Reglas de clasificación y textos educativos. Este archivo se puede editar sin tocar el código. PENDIENTE DE REVISIÓN INSTITUCIONAL: validar textos y criterios con el área correspondiente del GCBA antes de usar en jornadas.",
+  "version": 1,
+  "contenedores": {
+    "verde": {
+      "nombre": "Reciclables",
+      "descripcion": "Secos y limpios",
+      "color": "#2e9b46",
+      "acepta": ["reciclable"]
+    },
+    "negro": {
+      "nombre": "Basura",
+      "descripcion": "Restos húmedos y sucios",
+      "color": "#26282b",
+      "acepta": ["basura"]
+    }
+  },
+  "puntaje": {
+    "aciertoPrimerIntento": 10,
+    "aciertoDespuesDeError": 5,
+    "error": 0
+  },
+  "textos": {
+    "bienvenida": {
+      "titulo": "¡Te damos la bienvenida a la Estación Saludable!",
+      "cuerpo": "Agarrá cada residuo de la mesa con el gatillo o el botón lateral y tiralo en el contenedor que corresponde: verde para reciclables, negro para basura."
+    },
+    "alPiso": {
+      "titulo": "Se cayó al piso",
+      "cuerpo": "No pasa nada: lo devolvemos a la mesa para que lo vuelvas a intentar."
+    },
+    "resultados": {
+      "titulo": "¡Terminaste!",
+      "cuerpo": "Recordá: los reciclables van al contenedor verde siempre limpios y secos. Así pueden volver a usarse."
+    },
+    "reiniciar": "Reiniciar"
+  },
+  "residuos": [
+    {
+      "id": "botella",
+      "nombre": "Botella de plástico",
+      "categoria": "reciclable",
+      "forma": "botella",
+      "modelo": null,
+      "posicionMesa": [-0.3, 0.0, 0.0],
+      "acierto": "¡Muy bien! La botella de plástico es reciclable. Antes de tirarla, enjuagala y dejala secar.",
+      "error": "Casi. La botella de plástico es reciclable: va al contenedor verde, limpia y seca."
+    },
+    {
+      "id": "lata",
+      "nombre": "Lata de gaseosa",
+      "categoria": "reciclable",
+      "forma": "lata",
+      "modelo": null,
+      "posicionMesa": [0.0, 0.0, 0.05],
+      "acierto": "¡Bien ahí! Las latas de aluminio se reciclan una y otra vez. Que estén vacías y secas.",
+      "error": "Ojo: las latas son reciclables. Van al contenedor verde, vacías y secas."
+    },
+    {
+      "id": "servilleta",
+      "nombre": "Servilleta usada",
+      "categoria": "basura",
+      "forma": "servilleta",
+      "modelo": null,
+      "posicionMesa": [0.3, 0.0, 0.0],
+      "acierto": "¡Exacto! Una servilleta sucia con comida no se puede reciclar: va al contenedor negro.",
+      "error": "Esta no. Aunque es papel, la servilleta está sucia con comida y eso arruina los reciclables. Va al contenedor negro."
+    }
+  ]
+}
