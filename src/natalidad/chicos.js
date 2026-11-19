@@ -234,11 +234,15 @@ export class Chicos {
     const aJugador = _tmp.subVectors(this.jugador, c.posicion).setY(0);
     const dj = aJugador.length();
     if (dj < 1.3 && paso.dot(aJugador) > 0) {
-      const lado = Math.sign(aJugador.x * paso.z - aJugador.z * paso.x) || 1;
+      // El lado para rodear se elige una vez y se mantiene (si se recalcula en cada cuadro y el
+      // destino está justo detrás del jugador, cambia de lado todo el tiempo y queda trabado).
+      c.ladoEsquive ??= Math.sign(aJugador.x * paso.z - aJugador.z * paso.x) || 1;
+      const lado = c.ladoEsquive;
       const tangente = _tmp2.set(-aJugador.z, 0, aJugador.x).normalize().multiplyScalar(-lado);
       const peso = THREE.MathUtils.clamp((1.3 - dj) / 0.55, 0, 1);
       paso.lerp(tangente, peso).normalize();
     }
+    if (dj > 1.6) c.ladoEsquive = undefined; // ya lo rodeó
     c.posicion.addScaledVector(paso, Math.min(d, velocidad * dt));
     // Nunca dentro del "espacio personal" del jugador.
     const sep = _tmp.subVectors(c.posicion, this.jugador).setY(0);

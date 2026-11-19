@@ -87,15 +87,27 @@ export class Pasador {
         ch.mirarA(c, jugador);
         if (p.estado === 'reposo' && p.raiz.position.distanceTo(_tmp.copy(jugador).setY(p.radio)) > 1.7) this.estado = 'busca';
         break;
-      case 'busca':
+      case 'busca': {
         c.comportamiento = 'camina';
         if (p.estado === 'agarrado') { this.estado = 'vuelve'; break; }
-        if (ch.caminarHacia(c, p.raiz.position, dt, 2.4) < 0.45 && p.estado !== 'lanzada') {
+        const d = ch.caminarHacia(c, p.raiz.position, dt, 2.4);
+        if (d < 0.45 && p.estado !== 'lanzada') {
           this.tomarPelota();
           this.pases++;
           this.estado = 'vuelve';
+          this.mejorDistancia = undefined;
+          break;
+        }
+        // Red de seguridad: si no se acerca a la pelota durante 2,5 s, la pelota rueda hacia él.
+        if (this.mejorDistancia === undefined || d < this.mejorDistancia - 0.1) { this.mejorDistancia = d; this.sinAvanzar = 0; }
+        else if ((this.sinAvanzar += dt) > 2.5 && p.estado === 'reposo') {
+          const hacia = _tmp.subVectors(c.posicion, p.raiz.position).setY(0);
+          p.rodar(p.raiz.position.clone(), hacia.normalize().multiplyScalar(Math.max(1.2, (d - 0.3) * 1.6)));
+          this.sinAvanzar = 0;
+          this.mejorDistancia = undefined;
         }
         break;
+      }
       case 'vuelve':
         c.comportamiento = 'camina';
         if (ch.caminarHacia(c, this.puesto, dt, 2.0) < 0.1) {

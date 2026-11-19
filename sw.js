@@ -4,7 +4,7 @@
  * sin conexión se usa lo guardado en la última visita.
  * Al agregar archivos nuevos (modelos, sonidos), sumalos a ARCHIVOS y subí VERSION.
  */
-const VERSION = 'ba-recicla-v8';
+const VERSION = 'ba-recicla-v9';
 const ARCHIVOS = [
   './', 'index.html', 'reciclaje.html', 'natalidad.html', 'manifest.webmanifest', 'icono.svg', 'datos/reglas.json', 'datos/natalidad.json',
   'src/arranque.js', 'src/main.js', 'src/config.js',

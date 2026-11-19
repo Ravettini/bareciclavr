@@ -208,12 +208,8 @@ export class Manos {
       const v = _tmp.subVectors(h[k].p, h[j].p).divideScalar(dt);
       if (v.lengthSq() > r.velocidad.lengthSq()) r.velocidad.copy(v);
     }
-    // Con la mano, el impulso del tiro es la velocidad máxima reciente de la palma
-    // (al soltar, la mano ya está frenando).
-    if (this.esMano(mano) && mano.velocidades?.length) {
-      const pico = mano.velocidades.reduce((max, x) => (x.v.lengthSq() > max.lengthSq() ? x.v : max), r.velocidad);
-      r.velocidad.copy(pico);
-    }
+    // (Con la mano se usa lo mismo: la velocidad suavizada de la pelota. Las velocidades cuadro a
+    // cuadro del seguimiento de manos tienen saltos que desviaban la dirección del tiro.)
     // Refuerzo solo para tiros (más de 1 m/s): apoyar o dejar caer no cambia.
     if (r.velocidad.length() > 1) r.velocidad.multiplyScalar(CONFIG.fisica.refuerzoTiro);
     r.velocidad.clampLength(0, CONFIG.fisica.velocidadMaxima);
@@ -235,8 +231,11 @@ export class Manos {
     const j = mano.manoReal.joints;
     if (!this.esMano(mano) || !j?.wrist || !j['middle-finger-phalanx-proximal']) { mano.cierre = 0; return; }
     const muñeca = j.wrist.position;
-    mano.palma.position.lerpVectors(muñeca, j['middle-finger-phalanx-proximal'].position, 0.6);
+    // Centro de la palma calculado desde la MUÑECA (no desde los nudillos): no se mueve al abrir
+    // o cerrar los dedos, así la pelota no "salta" al soltarla. En el espacio de la muñeca de
+    // WebXR, -Z apunta a los dedos y -Y hacia el lado de la palma.
     mano.palma.quaternion.copy(j.wrist.quaternion);
+    mano.palma.position.copy(_offsetPalma).applyQuaternion(j.wrist.quaternion).add(muñeca);
     // Distancia promedio de las puntas de los dedos a la muñeca: abierta ≈ 17 cm, puño ≈ 9 cm.
     let suma = 0, n = 0;
     for (const dedo of ['index', 'middle', 'ring', 'pinky']) {
@@ -360,6 +359,7 @@ export class Manos {
 const _tmp = new THREE.Vector3();
 const _tmp2 = new THREE.Vector3();
 const _tmp3 = new THREE.Vector3();
+const _offsetPalma = new THREE.Vector3(0, -0.025, -0.07);
 
 /** Modelo provisional del control (los modelos oficiales se bajan de internet; acá no). */
 function modeloControl() {
