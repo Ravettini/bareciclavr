@@ -1,13 +1,14 @@
 import * as THREE from 'three';
-import { crearPlaza } from '../escena/plaza.js';
+import { crearPlaza, apagarPlaza } from '../escena/plaza.js';
 import { Panel } from '../escena/panel.js';
 import { crearBoton } from '../escena/boton.js';
-import { malla } from '../escena/materiales.js';
+import { malla, desaturar } from '../escena/materiales.js';
 import { Manos } from '../interaccion/manos.js';
 import { crearBotonVR } from '../interaccion/botonVR.js';
 import { mostrarAviso, VERSION } from '../avisos.js';
-import { Hamacas, crearTobogan, crearArenero, crearAro, Burbujas } from './juegos.js';
-import { Chicos } from './chicos.js';
+import { Hamacas, crearTobogan, crearArenero, crearAro, Burbujas, crearLona, crearVallas } from './juegos.js';
+import { Chicos, Destellos } from './chicos.js';
+import { Juguetes } from './juguetes.js';
 import { Pelota } from './pelota.js';
 import { Ambiente } from './ambiente.js';
 import { Guion } from './guion.js';
@@ -75,14 +76,22 @@ async function iniciar() {
   const fundido = (valor) => { fundidoMat.opacity = valor; esferaFundido.visible = valor > 0.001; };
 
   // Sin árboles en la cancha de básquet ni detrás del panel de las hamacas.
-  crearPlaza(escena, { mesa: false, estacion: false, sinArboles: [[-6.5, 0.3, 2.3], [-1.9, -5.85, 2.0]] });
+  const plaza = crearPlaza(escena, { mesa: false, estacion: false, sinArboles: [[-6.5, 0.3, 2.3], [-1.9, -5.85, 2.0]] });
   const hamacas = new Hamacas(escena, [-3.3, 0, -5.0], 2);
-  crearTobogan(escena, [3.6, 0, -4.8]);
+  const tobogan = crearTobogan(escena, [3.6, 0, -4.8]);
   crearArenero(escena, [3.0, 0, -1.9]);
   const aro = crearAro(escena, [-6.5, 0, -1.4], 0);
+  // Espacios de infancia que se van perdiendo (metáfora): aparecen en los años de ESPACIOS (guion.js).
+  const lona = crearLona(escena, [3.0, 0, -1.9]);
+  const vallas = crearVallas(escena, [
+    [-5.0, -6.0, -1.6, -6.0], [-1.6, -6.0, -1.6, -4.0], [-1.6, -4.0, -5.0, -4.0], [-5.0, -4.0, -5.0, -6.0], // hamacas
+    [2.2, -6.6, 5.2, -6.6], [5.2, -6.6, 5.2, -3.0], [5.2, -3.0, 2.2, -3.0], [2.2, -3.0, 2.2, -6.6], // tobogán
+  ]);
   const burbujas = new Burbujas(escena);
 
   const chicos = new Chicos(escena, CHICOS.slice(0, datos.chicos));
+  chicos.destellos = new Destellos(escena);
+  const juguetes = new Juguetes(escena);
   const ordenSalida = CHICOS.map((c, i) => [c.orden ?? 100 + i, i]).sort((a, b) => a[0] - b[0]).map(([, i]) => i);
 
   const ambiente = new Ambiente();
@@ -113,9 +122,31 @@ async function iniciar() {
     alSoltar: (p) => guion.alSoltarPelota(p),
   });
 
+  // Cuando un chico se esfuma: sonido, y queda su juguete en el piso (el de la hamaca deja la hamaca sola).
+  chicos.alEmpezarAEsfumarse = () => ambiente.esfumarse();
+  chicos.alEsfumarse = (c, pos) => { if (c.comportamientoInicial !== 'hamaca' || !c.matrizExterna) juguetes.dejar(pos); };
+
+  const espacios = {
+    apagar(f) { desaturar(f); apagarPlaza(escena, plaza, f); },
+    cambiar(nombre) {
+      const destello = (v) => chicos.destellos.estallar(v, 24);
+      if (nombre === 'cinta') { tobogan.userData.cinta.visible = true; destello(new THREE.Vector3(3.6, 1, -4.8)); }
+      if (nombre === 'asiento') { hamacas.quitarAsiento(1); destello(hamacas.posicionAsiento(1, new THREE.Vector3())); }
+      if (nombre === 'lona') { lona.visible = true; destello(new THREE.Vector3(3.0, 0.4, -1.9)); }
+      if (nombre === 'vallas') { vallas.visible = true; aro.grupo.userData.red.visible = false; destello(new THREE.Vector3(-3.3, 1, -4.0)); destello(new THREE.Vector3(3.7, 1, -3.0)); }
+      ambiente.esfumarse();
+    },
+    reiniciar() {
+      tobogan.userData.cinta.visible = false;
+      lona.visible = false;
+      vallas.visible = false;
+      aro.grupo.userData.red.visible = true;
+    },
+  };
+
   const ctx = {
     datos, escena, rig, chicos, pelota, manos, panel, ambiente, hamacas, aro, burbujas, ordenSalida,
-    indices: INDICES, fundido, posicionJugador,
+    indices: INDICES, fundido, posicionJugador, juguetes, espacios,
     alFin: () => { botonReiniciar.visible = true; pedestal.visible = true; },
   };
   const guion = new Guion(ctx);

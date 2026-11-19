@@ -14,12 +14,13 @@ import * as THREE from 'three';
  */
 
 /** Lugares de la plaza: posición del jugador [x, z], hacia dónde mira (rotY) y dónde va el panel (local). */
+/** "despedida": dónde se ubican (local) los chicos que se esfuman al llegar a ese lugar. */
 export const LUGARES = {
-  pelota: { x: 0, z: 0, rotY: 0, panel: [0, 2.35, -4.0] },
-  basquet: { x: -6.5, z: 2.0, rotY: 0, panel: [2.0, 2.45, -3.4] },
-  hamaca: { x: -3.8, z: -3.25, rotY: 0, panel: [1.9, 2.4, -2.6] },
-  burbujas: { x: 1.6, z: 0.7, rotY: Math.atan2(-(2.9 - 1.6), -(-1.6 - 0.7)), panel: [-1.7, 2.3, -3.0] },
-  final: { x: 0, z: 0, rotY: 0, panel: [0, 2.35, -4.0] },
+  pelota: { x: 0, z: 0, rotY: 0, panel: [0, 2.35, -4.0], despedida: [[-1, -2.6], [1, -2.6]] },
+  basquet: { x: -6.5, z: 2.0, rotY: 0, panel: [2.0, 2.45, -3.4], despedida: [[-0.6, -2.7], [-1.4, -2.3], [0.2, -2.9]] },
+  hamaca: { x: -3.8, z: -3.25, rotY: 0, panel: [1.9, 2.4, -2.6], despedida: [[-1.4, -2.0], [-2.0, -1.1], [-0.9, -2.9]] },
+  burbujas: { x: 1.6, z: 0.7, rotY: Math.atan2(-(2.9 - 1.6), -(-1.6 - 0.7)), panel: [-1.7, 2.3, -3.0], despedida: [[-1.1, -2.4], [1.3, -2.3], [-0.3, -3.3], [0.8, -3.4]] },
+  final: { x: 0, z: 0, rotY: 0, panel: [0, 2.35, -4.0], despedida: [[-0.9, -2.5], [0.9, -2.7], [0, -3.3]] },
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -75,7 +76,7 @@ export class Pasador {
         c.comportamiento = 'quieto';
         ch.mirarA(c, jugador);
         if (c.sostiene) {
-          this.espera -= dt;
+          this.espera -= dt * (this.ctx.escala || 1); // respeta ?rapido=N (pruebas)
           if (this.espera <= 0) this.tirarAlJugador(jugador);
         } else if (p.estado === 'reposo' || p.estado === 'cayendo') {
           this.estado = 'esperaRetorno';
@@ -220,8 +221,16 @@ export class CapBasquet extends Capitulo {
     ctx.pelota.colisiones.push(this.colision);
   }
 
+  /** Estos chicos juegan en este capítulo: no se esfuman antes. */
+  necesita(c) {
+    const i = this.ctx.indices;
+    return c.indice === i.pasador || i.publicoBasquet.includes(c.indice);
+  }
+
   /** Lo llama main.js cuando el jugador suelta la pelota: si apuntó más o menos al aro, lo ayuda. */
   alSoltar(p) {
+    // Despedida: en el primer tiro después de armarse, el compañero se esfuma con la pelota en el aire.
+    if (this.despedida === 'armada') this.despedirCompanero();
     const v = p.velocidad;
     const hacia = _tmp.subVectors(this.aro.centro, p.raiz.position);
     const horizontal = Math.hypot(hacia.x, hacia.z);
@@ -239,8 +248,15 @@ export class CapBasquet extends Capitulo {
 
   actualizar(dt) {
     super.actualizar(dt);
-    this.pasador.actualizar(dt);
     const p = this.ctx.pelota;
+    const ctx = this.ctx;
+    // El momento más fuerte: pasado un rato, la próxima vez que el jugador tira, el compañero se
+    // esfuma con la pelota en el aire. Nadie la va a buscar.
+    if (!this.despedida && this.reloj >= this.def.despedida) this.despedida = 'armada';
+    // Respaldo: si el jugador no volvió a tirar, el compañero se esfuma igual, a la vista, antes de
+    // que termine el capítulo (si tenía la pelota, se le cae).
+    if (this.despedida === 'armada' && this.reloj >= this.def.duracion - 2) this.despedirCompanero();
+    if (this.pasador.activo) this.pasador.actualizar(dt);
     const y = p.raiz.position.y;
     // ¿Pasó por el aro de arriba hacia abajo?
     if (p.lanzadaPor === 'jugador' && (p.estado === 'cayendo') && this.yAnterior > this.aro.centro.y && y <= this.aro.centro.y) {
@@ -249,10 +265,25 @@ export class CapBasquet extends Capitulo {
       if (Math.hypot(dx, dz) < this.aro.radio + 0.06) this.doble();
     }
     this.yAnterior = y;
-    if (this.reloj >= this.def.duracion && p.estado !== 'agarrado') this.terminado = true;
+    // Termina al cumplir el tiempo (si el jugador sigue con la pelota en la mano, espera un poco).
+    if (this.reloj >= this.def.duracion && (p.estado !== 'agarrado' || this.reloj >= this.def.duracion + 6)) this.terminado = true;
+  }
+
+  despedirCompanero() {
+    this.despedida = 'hecha';
+    this.pasador.activo = false;
+    const p = this.ctx.pelota;
+    if (p.estado === 'enChico' && p.duenio === this.pasador.chico) { p.estado = 'cayendo'; p.duenio = null; }
+    this.ctx.chicos.esfumar(this.pasador.chico);
+    this.ctx.panel.mostrar({ titulo: String(this.def.anio), cuerpo: this.def.sinCompanero || 'Tu compañero de juego ya no está.', tono: 'neutro' });
+    this.reloj = this.def.duracion - 4.5; // quedan unos segundos para que se note, y sigue
   }
 
   doble() {
+    // La red frena la pelota: cae casi derecha y queda cerca del aro.
+    this.ctx.pelota.velocidad.x *= 0.15;
+    this.ctx.pelota.velocidad.z *= 0.15;
+    if (this.despedida === 'hecha') return; // el compañero ya no está: nadie festeja
     this.dobles++;
     const ctx = this.ctx;
     ctx.ambiente.acierto();
@@ -261,8 +292,9 @@ export class CapBasquet extends Capitulo {
   }
 
   terminar() {
+    // Si el compañero no llegó a esfumarse (el jugador nunca tiró), se esfuma ahora, a oscuras.
+    if (this.despedida !== 'hecha') this.ctx.chicos.esfumar(this.pasador.chico);
     this.pasador.activo = false;
-    this.liberar(this.pasador.chico);
     this.publico.forEach((c) => this.liberar(c));
     this.ctx.pelota.colisiones = this.ctx.pelota.colisiones.filter((f) => f !== this.colision);
     this.aro.grupo.visible = true; // el aro queda en la plaza
@@ -272,6 +304,8 @@ export class CapBasquet extends Capitulo {
 // ---------------------------------------------------------------------------------------------
 /** 2019: empujar la hamaca. La de al lado ya está vacía. */
 export class CapHamaca extends Capitulo {
+  necesita(c) { return c.indice === this.ctx.indices.hamaca; }
+
   preparar() {
     const ctx = this.ctx;
     this.asiento = ctx.hamacas.asientos[0];
@@ -316,6 +350,8 @@ export class CapHamaca extends Capitulo {
 // ---------------------------------------------------------------------------------------------
 /** 2022: burbujas. Una chica sopla burbujas y el jugador las revienta con las manos. */
 export class CapBurbujas extends Capitulo {
+  necesita(c) { return c.indice === this.ctx.indices.burbujas; }
+
   preparar() {
     const ctx = this.ctx;
     this.chica = this.ubicar(ctx.indices.burbujas, this.aMundo(0.2, 0, -1.9));

@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { malla } from '../escena/materiales.js';
 
 /**
  * Pelota con física simple (gravedad, rebote y rodar por el piso).
@@ -16,8 +15,9 @@ export class Pelota {
     this.raiz.name = 'Pelota';
     this.raiz.userData.residuo = this; // la detecta el sistema de manos
     const mitad = new THREE.SphereGeometry(this.radio, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2);
-    const arriba = malla(mitad, '#e74c3c');
-    const abajo = malla(mitad, '#f1f1f1');
+    // Materiales propios: la pelota conserva su color cuando la plaza "se apaga".
+    const arriba = new THREE.Mesh(mitad, new THREE.MeshLambertMaterial({ color: '#e74c3c', flatShading: true }));
+    const abajo = new THREE.Mesh(mitad, new THREE.MeshLambertMaterial({ color: '#f1f1f1', flatShading: true }));
     abajo.rotation.x = Math.PI;
     this.raiz.add(arriba, abajo);
     escena.add(this.raiz);
@@ -66,7 +66,7 @@ export class Pelota {
       v.y = v.y < -0.8 ? -v.y * 0.55 : 0;
       this.estado = 'cayendo';
       // Rozamiento con el piso.
-      const roce = Math.max(0, 1 - dt * 0.9);
+      const roce = Math.max(0, 1 - dt * 1.6);
       v.x *= roce;
       v.z *= roce;
       if (v.y === 0 && Math.hypot(v.x, v.z) < 0.06) {

@@ -120,6 +120,7 @@ export class Chicos {
         indice: i,
         ...d,
         comportamientoInicial: d.comportamiento,
+        miraInicial: d.mira,
         posicionInicial: d.posicion || [0, 0, 0],
         posicion: new THREE.Vector3(...(d.posicion || [0, 0, 0])),
         rumbo: 0,
@@ -133,14 +134,14 @@ export class Chicos {
         caminando: false,
       };
       const piel = new THREE.Color(PIELES[(i * 5 + 2) % PIELES.length]);
-      this.partes.torso.setColorAt(i, new THREE.Color(REMERAS[i % REMERAS.length]));
-      this.partes.short.setColorAt(i, new THREE.Color(PANTALONES[(i * 7) % PANTALONES.length]));
-      for (const lado of [0, 1]) {
-        this.partes.piernas.setColorAt(i * 2 + lado, new THREE.Color(PANTALONES[(i * 7) % PANTALONES.length]).lerp(piel, 0.55));
-        this.partes.brazos.setColorAt(i * 2 + lado, piel);
-      }
-      this.partes.cabeza.setColorAt(i, piel);
-      for (const estilo of ESTILOS_PELO) this.pelos[estilo].setColorAt(i, new THREE.Color(PELOS[(i * 3) % PELOS.length]));
+      c.colores = {
+        torso: new THREE.Color(REMERAS[i % REMERAS.length]),
+        short: new THREE.Color(PANTALONES[(i * 7) % PANTALONES.length]),
+        piernas: new THREE.Color(PANTALONES[(i * 7) % PANTALONES.length]).lerp(piel, 0.55),
+        piel,
+        pelo: new THREE.Color(PELOS[(i * 3) % PELOS.length]),
+      };
+      this.pintar(c, 0);
       return c;
     });
     this._m = new THREE.Matrix4();
@@ -154,7 +155,37 @@ export class Chicos {
   }
 
   get presentes() {
-    return this.lista.filter((c) => c.comportamiento !== 'ido' && c.comportamiento !== 'seVa');
+    return this.lista.filter((c) => !['ido', 'seVa', 'esfuma'].includes(c.comportamiento));
+  }
+
+  /** Pinta al chico con sus colores, mezclados con blanco luminoso según "blanco" (0…1). */
+  pintar(c, blanco) {
+    const i = c.indice;
+    const col = (base) => _color.copy(base).lerp(_brillo, blanco);
+    this.partes.torso.setColorAt(i, col(c.colores.torso));
+    this.partes.short.setColorAt(i, col(c.colores.short));
+    for (const lado of [0, 1]) {
+      this.partes.piernas.setColorAt(i * 2 + lado, col(c.colores.piernas));
+      this.partes.brazos.setColorAt(i * 2 + lado, col(c.colores.piel));
+    }
+    this.partes.cabeza.setColorAt(i, col(c.colores.piel));
+    for (const im of Object.values(this.pelos)) im.setColorAt(i, col(c.colores.pelo));
+    for (const im of [this.partes.torso, this.partes.short, this.partes.piernas, this.partes.brazos, this.partes.cabeza, ...Object.values(this.pelos)]) {
+      if (im.instanceColor) im.instanceColor.needsUpdate = true;
+    }
+  }
+
+  /**
+   * El chico se esfuma en el lugar, a la vista: se queda quieto, se vuelve blanco y luminoso,
+   * sube un poco y desaparece en una nube de destellos. Al terminar llama a alEsfumarse(c, pos).
+   */
+  esfumar(c) {
+    if (['ido', 'esfuma'].includes(c.comportamiento)) return;
+    c.comportamiento = 'esfuma';
+    c.tEsfuma = 0;
+    c.gesto = null;
+    c.sostiene = false;
+    this.alEmpezarAEsfumarse?.(c);
   }
 
   /** El chico deja de jugar y camina hacia afuera de la plaza (alejándose del jugador). */
@@ -177,7 +208,11 @@ export class Chicos {
       c.posicion.set(...c.posicionInicial);
       c.matrizExterna = null;
       c.gesto = null;
+      c.sostiene = false;
+      c.mira = c.miraInicial;
+      this.pintar(c, 0);
     }
+    this.destellos?.apagar();
   }
 
   /** Gesto temporal (festejar, tirar…). */
@@ -260,6 +295,21 @@ export class Chicos {
           c.ritmo = 6;
           break;
         }
+        case 'esfuma': {
+          c.tEsfuma += dt;
+          c.caminando = false;
+          if (c.matrizExterna) { c.matrizExterna = hamacas.matrizAsiento(c.asiento, c.matrizExterna); c.sentado = true; }
+          const k = Math.min(1, c.tEsfuma / DURACION_ESFUMARSE);
+          this.pintar(c, Math.min(1, k * 1.6));
+          if (c.tEsfuma >= DURACION_ESFUMARSE) {
+            const pos = c.matrizExterna ? new THREE.Vector3().setFromMatrixPosition(c.matrizExterna) : c.posicion.clone();
+            this.destellos?.estallar(pos.clone().setY(pos.y + 0.7 * c.escala));
+            c.comportamiento = 'ido';
+            visible = false;
+            this.alEsfumarse?.(c, pos.setY(0));
+          }
+          break;
+        }
         case 'ido':
           visible = false;
           break;
@@ -267,6 +317,7 @@ export class Chicos {
       this.escribirPose(c, t, visible);
     }
     for (const im of [...Object.values(this.partes), ...Object.values(this.pelos)]) im.instanceMatrix.needsUpdate = true;
+    this.destellos?.actualizar(dt);
   }
 
   /** Calcula y escribe la matriz de cada parte del chico según su pose. */
@@ -283,11 +334,18 @@ export class Chicos {
       return;
     }
     const raiz = this._raiz;
+    let escala = c.escala, subida = 0;
+    if (c.comportamiento === 'esfuma') {
+      const k = Math.min(1, c.tEsfuma / DURACION_ESFUMARSE);
+      subida = k * k * 0.35;
+      escala *= k < 0.7 ? 1 + Math.sin(k * 9) * 0.03 : 1 - (k - 0.7) / 0.3; // al final se achica
+    }
     if (c.matrizExterna) {
-      raiz.copy(c.matrizExterna).scale(this._s.setScalar(c.escala));
+      raiz.copy(c.matrizExterna).scale(this._s.setScalar(escala));
+      raiz.elements[13] += subida;
     } else {
       this._q.setFromAxisAngle(_arriba, c.rumbo);
-      raiz.compose(this._v.set(c.posicion.x, c.salto, c.posicion.z), this._q, this._s.setScalar(c.escala));
+      raiz.compose(this._v.set(c.posicion.x, c.salto + subida, c.posicion.z), this._q, this._s.setScalar(escala));
     }
     // Ángulos de la pose.
     const ritmo = c.ritmo || 8;
@@ -344,6 +402,9 @@ export class Chicos {
     return destino.copy(c.posicion).addScaledVector(frente, 0.3 * c.escala).setY((0.62 + c.salto) * c.escala);
   }
 }
+const DURACION_ESFUMARSE = 1.6;
+const _color = new THREE.Color();
+const _brillo = new THREE.Color('#fffbe8');
 const _tmp = new THREE.Vector3();
 const _tmp2 = new THREE.Vector3();
 const _arriba = new THREE.Vector3(0, 1, 0);
@@ -351,3 +412,37 @@ const _uno = new THREE.Vector3(1, 1, 1);
 const _cero = new THREE.Matrix4().makeScale(0, 0, 0);
 const _cab = new THREE.Matrix4();
 const _m2 = new THREE.Matrix4();
+
+/** Destellos que quedan cuando un chico se esfuma (InstancedMesh: 1 draw call). */
+export class Destellos {
+  constructor(escena, cantidad = 80) {
+    this.malla = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.035, 0), new THREE.MeshBasicMaterial({ color: '#fff6c8' }), cantidad);
+    this.malla.name = 'Destellos';
+    this.malla.frustumCulled = false;
+    this.malla.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.lista = Array.from({ length: cantidad }, () => ({ vida: 0, pos: new THREE.Vector3(), vel: new THREE.Vector3() }));
+    this._m = new THREE.Matrix4();
+    escena.add(this.malla);
+    this.apagar();
+  }
+  estallar(centro, n = 18) {
+    let k = 0;
+    for (const d of this.lista) {
+      if (d.vida > 0) continue;
+      d.vida = 1.2 + Math.random() * 0.6;
+      d.pos.copy(centro).add(_tmp.set((Math.random() - 0.5) * 0.4, (Math.random() - 0.5) * 0.8, (Math.random() - 0.5) * 0.4));
+      d.vel.set((Math.random() - 0.5) * 0.5, 0.4 + Math.random() * 0.6, (Math.random() - 0.5) * 0.5);
+      if (++k >= n) break;
+    }
+  }
+  apagar() { for (const d of this.lista) d.vida = 0; this.actualizar(0); }
+  actualizar(dt) {
+    this.lista.forEach((d, i) => {
+      if (d.vida > 0) { d.vida -= dt; d.pos.addScaledVector(d.vel, dt); }
+      const e = Math.max(0, Math.min(1, d.vida));
+      this._m.makeScale(e, e, e).setPosition(d.pos);
+      this.malla.setMatrixAt(i, this._m);
+    });
+    this.malla.instanceMatrix.needsUpdate = true;
+  }
+}

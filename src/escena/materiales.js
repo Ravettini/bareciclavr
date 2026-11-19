@@ -17,3 +17,16 @@ export function material(color, opciones = {}) {
 export function malla(geometria, color, opciones) {
   return new THREE.Mesh(geometria, material(color, opciones));
 }
+
+/**
+ * Quita color a todos los materiales compartidos (la plaza "se apaga"): 0 = colores originales,
+ * 1 = gris. Los chicos tienen materiales propios y conservan su color.
+ */
+export function desaturar(factor) {
+  for (const m of cache.values()) {
+    m.userData.original ??= m.color.clone();
+    const o = m.userData.original;
+    const gris = o.r * 0.3 + o.g * 0.59 + o.b * 0.11;
+    m.color.setRGB(o.r + (gris - o.r) * factor, o.g + (gris - o.g) * factor, o.b + (gris - o.b) * factor);
+  }
+}

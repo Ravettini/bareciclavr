@@ -126,5 +126,24 @@ export class Ambiente extends Sonido {
   atajada() { this.nota(220, 0, 0.08, 'sine', 0.12); }
   /** "Risa" sintetizada: notas agudas que suben (provisional, ideal: grabación real). */
   risa() { [988, 1175, 1319, 1568].forEach((f, i) => this.nota(f, i * 0.07, 0.09, 'triangle', 0.06)); }
+  /** Un chico se esfuma: un acorde suave que baja y se apaga. */
+  esfumarse() {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    for (const [f, retraso] of [[1047, 0], [784, 0.12], [523, 0.24]]) {
+      const t = ctx.currentTime + retraso;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, t);
+      osc.frequency.exponentialRampToValueAtTime(f * 0.5, t + 1.4);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.09, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+      osc.connect(g).connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 1.6);
+    }
+  }
   pop() { this.nota(1400 + Math.random() * 600, 0, 0.05, 'sine', 0.08); }
 }

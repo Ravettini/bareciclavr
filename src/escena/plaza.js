@@ -27,8 +27,10 @@ export function crearPlaza(escena, { mesa = true, estacion = true, sinArboles = 
   escena.fog = new THREE.Fog('#a9d6f5', 25, 60);
 
   // Luces: hemisférica + una direccional, sin sombras.
-  plaza.add(new THREE.HemisphereLight('#ffffff', '#6d8a4f', 2.2));
+  const cielo = new THREE.HemisphereLight('#ffffff', '#6d8a4f', 2.2);
+  plaza.add(cielo);
   const sol = new THREE.DirectionalLight('#fff3dd', 1.6);
+  plaza.userData.luces = { cielo, sol };
   sol.position.set(4, 10, 3);
   plaza.add(sol);
 
@@ -187,3 +189,19 @@ function crearFarola() {
   farola.add(poste, farol);
   return farola;
 }
+
+/**
+ * "Apaga" la plaza (0 = tarde soleada, 1 = día gris y apagado): cielo, niebla y luces.
+ * Se combina con desaturar() de materiales.js.
+ */
+export function apagarPlaza(escena, plaza, factor) {
+  const f = THREE.MathUtils.clamp(factor, 0, 1);
+  escena.background.set('#a9d6f5').lerp(_gris.set('#b8bdc2'), f);
+  escena.fog.color.copy(escena.background);
+  escena.fog.near = 25 - f * 12;
+  const { cielo, sol } = plaza.userData.luces;
+  cielo.intensity = 2.2 - f * 0.6;
+  sol.intensity = 1.6 - f * 0.9;
+  sol.color.set('#fff3dd').lerp(_gris.set('#d8dde2'), f);
+}
+const _gris = new THREE.Color();

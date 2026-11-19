@@ -12,19 +12,25 @@ La página de inicio (`index.html`) es un **selector**: se elige la experiencia 
 
 ## La plaza que se vacía
 
-Unos 4 minutos, de pie o sentado, con controles o con las manos. Un juego distinto por año, en la
-misma plaza, y cada vez con menos chicos (según la serie de nacimientos):
+Unos 3 minutos (tope de seguridad: 4), de pie o sentado, con controles o con las manos. Un
+minijuego por año en la misma plaza; cada año hay **menos chicos** y **menos espacios de infancia**.
 
-| Año | Juego | Qué hace el jugador |
-|---|---|---|
-| 2014 | Pelota | Un chico le pasa la pelota: la ataja y se la devuelve. Si la tira mal, el chico la va a buscar (esquivando al jugador). |
-| 2016 | Básquet | Tira al aro (con ayuda para apuntar); los chicos festejan cada doble. |
-| 2019 | Hamaca | Empuja a una chica en la hamaca. La hamaca de al lado ya está vacía. |
-| 2022 | Burbujas | Una chica sopla burbujas y el jugador las revienta con las manos. |
-| 2024 | Final | La pelota vuelve rodando sola. La tira y nadie se la devuelve. Después, el dato y el cierre. |
+| Año | Minijuego | Chicos | La plaza |
+|---|---|---|---|
+| 2014 | Atajar y devolver la pelota | 16 | Colores vivos, todo funciona |
+| 2016 | Básquet. El compañero se esfuma con la pelota en el aire | 15 → 14 | Tobogán cerrado con cinta |
+| 2019 | Empujar la hamaca | 12 | A la hamaca de al lado le sacaron el asiento |
+| 2022 | Reventar burbujas (una sola chica en el arenero) | 9 | Arenero tapado con una lona; menos color |
+| 2024 | La pelota vuelve rodando; la tirás y nadie la devuelve | 8 | Juegos vallados, todo gris |
 
-Entre capítulos hay un fundido a negro y el jugador aparece en otro lugar de la plaza (sin
-movimiento artificial, para no marear); avanzan los años con un tic-tac y se van chicos.
+**Cómo se nota que se van:** entre capítulos hay un fundido a negro; a oscuras, los chicos que se van
+se ubican jugando frente al jugador. Al volver la luz avanzan los años y, en cada año, los que
+corresponden según la serie de nacimientos **saludan y se esfuman** a la vista (se vuelven blancos y
+desaparecen en destellos), dejando su juguete en el piso. El panel cuenta cuántos quedan. La plaza
+pierde color de a poco; los chicos conservan el suyo hasta que se van.
+
+La pérdida de espacios es una **metáfora** (cinta, asiento quitado, lona, vallas, color): no hay
+carteles literales de cierre.
 
 **Con las manos** (seguimiento de manos): cerrar la mano cerca de la pelota la agarra y abrirla la
 suelta; si la pelota llega volando a la palma, queda atajada, y se tira con un movimiento rápido.

@@ -21,7 +21,8 @@ const verificar = (ok, texto) => { console.log(`${ok ? '✔' : '✘'} ${texto}`)
   const servidor = spawn(process.execPath, ['scripts/servidor.js'], { cwd: raiz, env: { ...process.env, PUERTO: String(PUERTO) } });
   await new Promise((ok) => servidor.stdout.once('data', ok));
   const navegador = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
-  const pagina = await navegador.newPage({ viewport: { width: 1280, height: 720 } });
+  // Ventana chica: el navegador de prueba dibuja sin placa de video y así va más rápido.
+  const pagina = await navegador.newPage({ viewport: { width: 800, height: 450 } });
   const errores = [];
   pagina.on('pageerror', (e) => errores.push(e.message));
   pagina.on('console', (m) => { if (m.type() === 'error') errores.push(m.text()); });
@@ -29,7 +30,7 @@ const verificar = (ok, texto) => { console.log(`${ok ? '✔' : '✘'} ${texto}`)
   const ev = (fn, arg) => pagina.evaluate(fn, arg);
   const esperarQue = (fn, ms = 20000, arg) => pagina.waitForFunction(fn, arg, { timeout: ms, polling: 50 }).then(() => true).catch(() => false);
   const capituloActual = () => ev(() => (__juego.guion.fase === 'capitulo' ? __juego.guion.capitulo.def.juego : __juego.guion.fase));
-  const esperarCapitulo = (juego, ms = 40000) => esperarQue((j) => __juego.guion.fase === 'capitulo' && __juego.guion.capitulo.def.juego === j, ms, juego);
+  const esperarCapitulo = (juego, ms = 70000) => esperarQue((j) => __juego.guion.fase === 'capitulo' && __juego.guion.capitulo.def.juego === j, ms, juego);
 
   try {
     await pagina.goto(`http://localhost:${PUERTO}/natalidad.html?emular=1&rapido=2`);
@@ -86,11 +87,32 @@ const verificar = (ok, texto) => { console.log(`${ok ? '✔' : '✘'} ${texto}`)
           window.__distanciaMinima = Math.min(window.__distanciaMinima, Math.hypot(c.posicion.x - j.x, c.posicion.z - j.z));
         }
       }, 50);
+      // Monitor: chicos que se esfuman, y si fue delante del jugador (a la vista).
+      window.__esfumados = [];
+      const vistos = new Set();
+      setInterval(() => {
+        const j = __juego.camara.getWorldPosition(new THREE.Vector3());
+        const frente = new THREE.Vector3(0, 0, -1).applyQuaternion(__juego.rig.quaternion);
+        for (const c of __juego.chicos.lista) {
+          if (c.comportamiento !== 'esfuma' || vistos.has(c)) continue;
+          vistos.add(c);
+          const p = c.matrizExterna ? new THREE.Vector3().setFromMatrixPosition(c.matrizExterna) : c.posicion.clone();
+          const hacia = p.sub(j).setY(0);
+          window.__esfumados.push({ i: c.indice, dist: +hacia.length().toFixed(2), delante: hacia.normalize().dot(frente) > 0.3, fase: __juego.guion.fase });
+        }
+      }, 40);
       // Monitor: ¿llegó a estar agarrada la pelota por cierre de mano / atajada con la palma?
       window.__modos = new Set();
       setInterval(() => { for (const m of __juego.manos.manos) if (m.modo) window.__modos.add(m.modo); }, 30);
     });
-    const capturar = async (nombre) => { await esperar(150); await pagina.screenshot({ path: path.join(capturas, nombre) }); };
+    // Capturas con la mirada un poco inclinada: con la cabeza justo al horizonte, el emulador
+    // muestra negra la mitad de abajo (efecto del emulador, no del juego).
+    const capturar = async (nombre) => {
+      await ev(() => { const q = new __juego.THREE.Quaternion().setFromAxisAngle(new __juego.THREE.Vector3(1, 0, 0), -0.15); __dispositivoXR.quaternion.set(q.x, q.y, q.z, q.w); });
+      await esperar(250);
+      await pagina.screenshot({ path: path.join(capturas, nombre) });
+      await ev(() => __dispositivoXR.quaternion.set(0, 0, 0, 1));
+    };
 
     // ---- 2014: atajar con el control y devolverla ----
     let cab = await ev(() => __prueba.cabeza());
@@ -99,7 +121,7 @@ const verificar = (ok, texto) => { console.log(`${ok ? '✔' : '✘'} ${texto}`)
     const n = Math.hypot(...hacia);
     const atajada = [cab[0] + (hacia[0] / n) * 0.4, Math.max(0.85, cab[1] - 0.45), cab[2] + (hacia[1] / n) * 0.4];
     await ev((p) => { __prueba.mover('right', p); __prueba.gatillo('right', 1); }, atajada);
-    verificar(await esperarQue(() => __juego.pelota.estado === 'agarrado', 16000), '2014: ataja la pelota con el control (después de la presentación)');
+    verificar(await esperarQue(() => __juego.pelota.estado === 'agarrado', 30000), '2014: ataja la pelota con el control (después de la presentación)');
     await capturar('n1-2014-atajada.png');
     let devuelta = false;
     for (let i = 0; i < 3 && !devuelta; i++) {
@@ -163,9 +185,36 @@ const verificar = (ok, texto) => { console.log(`${ok ? '✔' : '✘'} ${texto}`)
     verificar(doble, '2016: ¡doble! (la ayuda para apuntar funciona)');
     if (doble) await capturar('n3-2016-doble.png');
 
+    // El compañero se esfuma con la pelota en el aire: la mano lo espera, ataja el pase y tira.
+    {
+      const idMano = await ev(() => setInterval(() => {
+        const g = __juego.guion;
+        if (g.capitulo?.def.juego !== 'basquet' || __juego.pelota.estado === 'agarrado') return;
+        const pas = g.capitulo.pasador;
+        if (!pas.activo) return;
+        const cb = __juego.camara.getWorldPosition(new __juego.THREE.Vector3());
+        const h = new __juego.THREE.Vector3().subVectors(pas.puesto, cb).setY(0).normalize();
+        __prueba.palmaEn('right', [cb.x + h.x * 0.4, Math.max(0.85, cb.y - 0.45), cb.z + h.z * 0.4]);
+      }, 100));
+      // Puede que ya haya pasado (si el tiro al aro fue después de armarse la despedida).
+      let hecha = await ev(() => __juego.guion.capitulo?.despedida === 'hecha' || __juego.guion.historial.some((h) => h.startsWith('capitulo:hamaca')));
+      for (let i = 0; i < 4 && !hecha; i++) {
+        const listo = await esperarQue(() => __juego.guion.capitulo?.def.juego === 'basquet' && __juego.guion.capitulo.despedida === 'armada' && __juego.pelota.estado === 'agarrado', 25000);
+        if (!listo) break;
+        await esperar(500);
+        await ev(() => __prueba.mover_con_velocidad('mano', 'right', [0, 2.5, -3.2], 220));
+        hecha = await esperarQue(() => __juego.guion.capitulo?.despedida === 'hecha', 3000);
+      }
+      await ev((id) => clearInterval(id), idMano);
+      verificar(hecha, '2016: al tirar la pelota, el compañero se esfuma con la pelota en el aire');
+      if (hecha) { await esperar(700); await capturar('n3b-2016-se-esfuma.png'); }
+    }
+
     // ---- 2019: empujar la hamaca ----
+    if (await esperarQue(() => __juego.chicos.lista.some((c) => c.gesto === 'saluda'), 30000)) { await esperar(300); await capturar('n3c-saluda.png'); }
+    if (await esperarQue(() => __juego.chicos.lista.some((c) => c.comportamiento === 'esfuma' && c.tEsfuma > 0.9), 8000)) await capturar('n3d-esfumandose.png');
     verificar(await esperarCapitulo('hamaca'), '2019: aparece frente a las hamacas');
-    verificar(await ev(() => __juego.hamacas.asientos[1].ocupado === false), '2019: la hamaca de al lado ya está vacía');
+    verificar(await ev(() => __juego.hamacas.asientos[1].malla.visible === false), '2019: a la hamaca de al lado le sacaron el asiento');
     await ev(() => {
       // La mano sigue al asiento (un poco del lado del jugador) durante 4 s.
       const id = setInterval(() => {
@@ -206,9 +255,25 @@ const verificar = (ok, texto) => { console.log(`${ok ? '✔' : '✘'} ${texto}`)
     await ev(() => __prueba.mover_con_velocidad('mano', 'right', [0, 1.2, -3.5], 200, 'abrir'));
     verificar(await esperarQue(() => __juego.pelota.estado === 'cayendo' || __juego.pelota.estado === 'reposo', 3000), '2024: abre la mano y la pelota sale');
     await capturar('n6-2024-final.png');
+    const plaza = await ev(() => ({
+      cinta: __juego.escena.getObjectByName('CintaTobogan').visible,
+      lona: __juego.escena.getObjectByName('LonaArenero').visible,
+      vallas: __juego.escena.getObjectByName('Vallas').visible,
+      apagado: __juego.guion.apagadoObjetivo,
+      juguetes: __juego.ctx.juguetes.lista.length,
+    }));
+    verificar(plaza.cinta && plaza.lona && plaza.vallas, '2024: la plaza perdió sus espacios (tobogán con cinta, arenero tapado, juegos vallados)');
+    verificar(plaza.apagado >= 0.8, `2024: la plaza perdió el color (apagado ${plaza.apagado})`);
+    verificar(plaza.juguetes >= 3, `quedaron juguetes en el piso donde estaban los chicos (${plaza.juguetes})`);
+    const esf = await ev(() => window.__esfumados);
+    const aLaVista = esf.filter((e) => e.delante && e.dist < 6);
+    verificar(esf.length >= 7 && aLaVista.length >= esf.length - 1, `los chicos se esfuman a la vista del jugador (${aLaVista.length} de ${esf.length}, distancias: ${esf.map((e) => e.dist).join(', ')})`);
+    await capturar('n6b-2024-plaza-apagada.png');
     verificar(await esperarQue(() => __juego.guion.historial.includes('dato'), 15000), 'aparece el dato');
     verificar(await ev(() => __juego.pelota.estado !== 'enChico'), 'nadie devolvió la pelota');
     verificar(await esperarQue(() => __juego.guion.fase === 'fin' && __juego.botonReiniciar.visible, 15000), 'cierre con botón Reiniciar');
+    const total = await ev(() => __juego.guion.tiempoTotal);
+    verificar(total <= 240, `la experiencia dura menos de 4 minutos (${Math.floor(total / 60)}:${String(Math.round(total % 60)).padStart(2, '0')} en tiempo real)`);
 
     // ---- Reiniciar (con el control y el rayo) ----
     await ev(() => { __dispositivoXR.primaryInputMode = 'controller'; });

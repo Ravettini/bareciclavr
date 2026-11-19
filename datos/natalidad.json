@@ -3,9 +3,10 @@
   "version": 2,
   "chicos": 16,
   "tiempos": {
-    "_comentario": "Segundos. porAnio: cuánto dura cada año en las transiciones. dato: cuánto se muestra el dato final.",
-    "porAnio": 1.3,
-    "dato": 12
+    "_comentario": "Segundos. porAnio: cuánto dura cada año en las transiciones. dato: cuánto se muestra el dato. tope: a partir de este tiempo total la experiencia pasa directo al final (para que nunca supere ~4 minutos).",
+    "porAnio": 1.5,
+    "dato": 10,
+    "tope": 200
   },
   "textos": {
     "inicio": {
@@ -32,7 +33,7 @@
     {
       "juego": "pelota",
       "anio": 2014,
-      "duracion": 45,
+      "duracion": 35,
       "cuerpo": "Una tarde cualquiera. Un chico te quiere pasar la pelota: atajala y devolvésela.",
       "pie": "Agarrás cerrando la mano, con el gatillo o con el botón lateral",
       "agarrala": "Agarrá la pelota y tirásela."
@@ -40,28 +41,30 @@
     {
       "juego": "basquet",
       "anio": 2016,
-      "duracion": 45,
+      "duracion": 30,
       "cuerpo": "¡A jugar al básquet! Tirá la pelota al aro.",
-      "pie": "Apuntá al aro y soltá la pelota con un poco de fuerza"
+      "pie": "Apuntá al aro y soltá la pelota con fuerza",
+      "despedida": 14,
+      "sinCompanero": "Tu compañero de juego ya no está."
     },
     {
       "juego": "hamaca",
       "anio": 2019,
-      "duracion": 35,
+      "duracion": 25,
       "cuerpo": "Empujá la hamaca: tocala cuando se acerca a vos.",
-      "pie": "La hamaca de al lado ya está vacía"
+      "pie": "La hamaca de al lado ya no tiene asiento"
     },
     {
       "juego": "burbujas",
       "anio": 2022,
-      "duracion": 30,
+      "duracion": 25,
       "cuerpo": "¡Burbujas! Reventalas con las manos.",
       "pie": ""
     },
     {
       "juego": "final",
       "anio": 2024,
-      "duracion": 14,
+      "duracion": 18,
       "cuerpo": "Tirá la pelota.",
       "pie": ""
     }

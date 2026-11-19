@@ -40,7 +40,7 @@ export class Hamacas {
       asiento.position.y = -largoSoga;
       pivote.add(asiento);
       this.grupo.add(pivote);
-      this.asientos.push({ pivote, amplitud: 0.55, fase: i * 1.7, ocupado: true, angulo: 0, velocidad: 0 });
+      this.asientos.push({ pivote, malla: asiento, amplitud: 0.55, fase: i * 1.7, ocupado: true, angulo: 0, velocidad: 0 });
     }
     escena.add(this.grupo);
   }
@@ -62,6 +62,13 @@ export class Hamacas {
       a.velocidad = dt > 0 ? (a.angulo - anterior) / dt : 0;
       a.pivote.rotation.x = a.angulo;
     }
+  }
+
+  /** Saca el asiento i (quedan las cadenas colgando) o lo vuelve a poner. */
+  quitarAsiento(i, quitar = true) {
+    const a = this.asientos[i];
+    a.malla.visible = !quitar;
+    if (quitar) { a.ocupado = false; a.amplitud = 0.08; }
   }
 
   /** Posición mundial del asiento i. */
@@ -96,6 +103,69 @@ export function crearTobogan(escena, posicion) {
   }
   g.position.set(...posicion);
   g.rotation.y = -0.5;
+  escena.add(g);
+  // Cinta de "cerrado" (rayada roja y blanca), oculta al principio.
+  const cinta = new THREE.Group();
+  cinta.name = 'CintaTobogan';
+  for (const [x, z, ancho, rot] of [[0, -0.75, 1.3, 0], [0.55, 1.2, 3.6, Math.PI / 2 - 0.05], [-0.55, 1.2, 3.6, Math.PI / 2 + 0.05]]) {
+    for (let k = 0; k < Math.round(ancho / 0.2); k++) {
+      const tramo = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.06, 0.012), k % 2 ? _cintaBlanca : _cintaRoja);
+      tramo.position.set(x + (rot ? 0 : -ancho / 2 + k * 0.2 + 0.1), 0.9, z + (rot ? -ancho / 2 + k * 0.2 + 0.1 : 0));
+      tramo.rotation.y = rot;
+      cinta.add(tramo);
+    }
+  }
+  cinta.visible = false;
+  g.add(cinta);
+  g.userData.cinta = cinta;
+  return g;
+}
+
+// La cinta conserva su color aunque la plaza se apague (materiales propios).
+const _cintaRoja = new THREE.MeshBasicMaterial({ color: '#d62f2f' });
+const _cintaBlanca = new THREE.MeshBasicMaterial({ color: '#ffffff' });
+
+/** Lona gris que tapa el arenero (oculta al principio). */
+export function crearLona(escena, posicion) {
+  const lona = malla(new THREE.BoxGeometry(3.1, 0.04, 3.1), '#6f767d');
+  lona.position.set(posicion[0], 0.14, posicion[2]);
+  lona.name = 'LonaArenero';
+  lona.visible = false;
+  escena.add(lona);
+  return lona;
+}
+
+/** Vallas alrededor de los juegos (ocultas al principio). */
+export function crearVallas(escena, tramos) {
+  const g = new THREE.Group();
+  g.name = 'Vallas';
+  for (const [x1, z1, x2, z2] of tramos) {
+    const largo = Math.hypot(x2 - x1, z2 - z1);
+    const n = Math.max(1, Math.round(largo / 2));
+    for (let k = 0; k < n; k++) {
+      const t = (k + 0.5) / n;
+      const valla = new THREE.Group();
+      const marco = malla(new THREE.BoxGeometry(largo / n - 0.08, 0.06, 0.05), '#9aa1a8');
+      marco.position.y = 1.05;
+      const base = malla(new THREE.BoxGeometry(largo / n - 0.08, 0.06, 0.05), '#9aa1a8');
+      base.position.y = 0.1;
+      valla.add(marco, base);
+      for (let b = 0; b < 8; b++) {
+        const barra = malla(new THREE.BoxGeometry(0.025, 0.95, 0.025), '#9aa1a8');
+        barra.position.set(-(largo / n) / 2 + 0.1 + b * ((largo / n - 0.2) / 7), 0.58, 0);
+        valla.add(barra);
+      }
+      for (const lado of [-1, 1]) {
+        const pie = malla(new THREE.BoxGeometry(0.08, 0.05, 0.4), '#7f868c');
+        pie.position.set(lado * ((largo / n) / 2 - 0.05), 0.03, 0);
+        valla.add(pie);
+      }
+      valla.position.set(x1 + (x2 - x1) * t, 0, z1 + (z2 - z1) * t);
+      valla.rotation.y = -Math.atan2(z2 - z1, x2 - x1);
+      g.add(valla);
+    }
+  }
+  g.visible = false;
   escena.add(g);
   return g;
 }
@@ -133,6 +203,7 @@ export function crearAro(escena, posicion, rotY = 0) {
   const red = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.16, 0.32, 12, 1, true), new THREE.MeshBasicMaterial({ color: '#ffffff', wireframe: true }));
   red.position.set(0, 1.84, 0.28);
   g.add(poste, brazo, tablero, marco, interior, aro, red);
+  g.userData.red = red;
   g.position.set(...posicion);
   g.rotation.y = rotY;
   escena.add(g);
