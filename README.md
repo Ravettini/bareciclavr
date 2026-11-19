@@ -29,6 +29,13 @@ corresponden según la serie de nacimientos **saludan y se esfuman** a la vista 
 desaparecen en destellos), dejando su juguete en el piso. El panel cuenta cuántos quedan. La plaza
 pierde color de a poco; los chicos conservan el suyo hasta que se van.
 
+**Jugar sentado:** al entrar en VR (y en cada cambio de año) se mide la altura de la cabeza; si está
+por debajo de 1,3 m, el jugador "sube" hasta que sus ojos quedan a 1,45 m. La pelota que está en el
+piso cerca salta a la mano cuando se baja la mano (con controles, apretando el gatillo).
+
+**Tiros:** la velocidad al soltar es la máxima de los últimos ~150 ms (medida en tramos de 50 ms) con
+un refuerzo del 30 % para tiros, así la pelota no "se cae" al soltarla.
+
 La pérdida de espacios es una **metáfora** (cinta, asiento quitado, lona, vallas, color): no hay
 carteles literales de cierre.
 

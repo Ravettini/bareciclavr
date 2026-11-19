@@ -74,7 +74,8 @@ export class Guion {
   irA(nombre) {
     const l = LUGARES[nombre];
     const { rig, panel } = this.ctx;
-    rig.position.set(l.x, 0, l.z);
+    // Si juega sentado, el jugador "sube" para ver la plaza a la altura de un adulto (ver main.js).
+    rig.position.set(l.x, this.ctx.calibrarAltura?.() ?? 0, l.z);
     rig.rotation.y = l.rotY;
     rig.updateMatrixWorld(true);
     panel.colocar(rig.localToWorld(new THREE.Vector3(...l.panel)), rig.localToWorld(new THREE.Vector3(0, 1.5, 0)));

@@ -115,6 +115,20 @@ async function iniciar() {
 
   const posicionJugador = (destino = new THREE.Vector3()) => camara.getWorldPosition(destino);
 
+  /**
+   * Jugar sentado: con "local-floor" el piso es el piso real, así que sentado los ojos quedan a
+   * ~1,1 m y todo se ve gigante. Si la cabeza está por debajo de 1,3 m, se sube al jugador hasta
+   * que sus ojos queden a 1,45 m. Se mide al entrar en VR y en cada cambio de capítulo (a oscuras),
+   * así se adapta si la persona se para o se sienta. Devuelve la altura extra.
+   */
+  let alturaExtra = 0;
+  const calibrarAltura = () => {
+    if (!renderer.xr.isPresenting) return 0;
+    const ojos = camara.position.y; // altura real de la cabeza sobre el piso
+    if (ojos > 0.3) alturaExtra = ojos < 1.3 ? Math.min(0.7, 1.45 - ojos) : 0;
+    return alturaExtra;
+  };
+
   const manos = new Manos({
     renderer, escena, camara, padre: rig,
     residuos: () => [pelota],
@@ -146,15 +160,19 @@ async function iniciar() {
 
   const ctx = {
     datos, escena, rig, chicos, pelota, manos, panel, ambiente, hamacas, aro, burbujas, ordenSalida,
-    indices: INDICES, fundido, posicionJugador, juguetes, espacios,
+    indices: INDICES, fundido, posicionJugador, juguetes, espacios, calibrarAltura,
     alFin: () => { botonReiniciar.visible = true; pedestal.visible = true; },
   };
   const guion = new Guion(ctx);
 
   const botonVR = crearBotonVR(renderer, { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'] }, mostrarAviso);
   botonVR.addEventListener('click', () => ambiente.activar());
-  renderer.xr.addEventListener('sessionstart', () => guion.comenzar());
-  renderer.xr.addEventListener('sessionend', camaraEscritorio);
+  renderer.xr.addEventListener('sessionstart', () => {
+    guion.comenzar();
+    // Medir la altura cuando la posición de la cabeza ya es estable.
+    setTimeout(() => { rig.position.y = calibrarAltura(); }, 1200);
+  });
+  renderer.xr.addEventListener('sessionend', () => { rig.position.y = alturaExtra = 0; camaraEscritorio(); });
   renderer.domElement.addEventListener('pointerdown', () => {
     guion.comenzar();
     // En la PC, en el capítulo de la hamaca, un clic empuja.
@@ -173,6 +191,24 @@ async function iniciar() {
     const dt = Math.min(0.05, anterior ? t - anterior : 0);
     anterior = t;
     manos.actualizar(t, dt);
+    // Imán: si la pelota está quieta en el piso cerca del jugador y una mano baja hacia ella,
+    // la pelota salta a la mano (no hace falta agacharse hasta el piso, sobre todo sentado).
+    if (pelota.estado === 'reposo' && t - (pelota.imanEn || 0) > 1.2) {
+      const p = pelota.raiz.position;
+      for (const mano of manos.manos) {
+        if (!mano.fuente || mano.agarrado) continue;
+        // Con controles, solo si aprieta (si no, la pelota rebotaría en la mano); con la mano, siempre.
+        if (!manos.esMano(mano) && !mano.presionados) continue;
+        const m = manos.puntoDeAgarre(mano);
+        // Mano "baja": a menos de 0,8 m del piso real (sentado, más abajo no se llega).
+        if (Math.hypot(m.x - p.x, m.z - p.z) < 0.45 && m.y - rig.position.y < 0.8) {
+          pelota.imanEn = t;
+          pelota.lanzar(p.clone(), m, 0.3);
+          pelota.lanzadaPor = 'iman';
+          break;
+        }
+      }
+    }
     if (manos.atajar() === pelota) ambiente.atajada();
     pelota.actualizar(dt);
     guion.actualizar(dt);

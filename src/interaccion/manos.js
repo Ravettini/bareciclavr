@@ -192,12 +192,21 @@ export class Manos {
     mano.agarrado = null;
     mano.modo = null;
     this.escena.attach(r.raiz);
+    // Velocidad del tiro: la MÁXIMA de los últimos ~150 ms (no el promedio). Al soltar el botón o
+    // abrir la mano, el brazo ya está frenando o bajando: con el promedio la pelota salía floja y
+    // hacia abajo.
     const h = mano.historial;
     r.velocidad.set(0, 0, 0);
-    if (h.length >= 2) {
-      const a = h[0], b = h[h.length - 1];
-      const dt = b.t - a.t;
-      if (dt > 0.001) r.velocidad.subVectors(b.p, a.p).divideScalar(dt);
+    // Cada velocidad se mide sobre un tramo de ~50 ms (no de un cuadro): así un salto del
+    // seguimiento no produce un tiro exagerado.
+    for (let k = 1; k < h.length; k++) {
+      if (h[h.length - 1].t - h[k].t > 0.15) continue;
+      let j = k - 1;
+      while (j > 0 && h[k].t - h[j].t < 0.05) j--;
+      const dt = h[k].t - h[j].t;
+      if (dt < 0.004) continue;
+      const v = _tmp.subVectors(h[k].p, h[j].p).divideScalar(dt);
+      if (v.lengthSq() > r.velocidad.lengthSq()) r.velocidad.copy(v);
     }
     // Con la mano, el impulso del tiro es la velocidad máxima reciente de la palma
     // (al soltar, la mano ya está frenando).
@@ -205,6 +214,8 @@ export class Manos {
       const pico = mano.velocidades.reduce((max, x) => (x.v.lengthSq() > max.lengthSq() ? x.v : max), r.velocidad);
       r.velocidad.copy(pico);
     }
+    // Refuerzo solo para tiros (más de 1 m/s): apoyar o dejar caer no cambia.
+    if (r.velocidad.length() > 1) r.velocidad.multiplyScalar(CONFIG.fisica.refuerzoTiro);
     r.velocidad.clampLength(0, CONFIG.fisica.velocidadMaxima);
     r.estado = 'cayendo';
     r.soltadoEn = performance.now(); // para no volver a atajarlo apenas sale de la mano
@@ -334,7 +345,7 @@ export class Manos {
       // Primero se registra dónde está lo agarrado (para calcular la velocidad del tiro)…
       if (mano.agarrado) {
         mano.historial.push({ p: mano.agarrado.raiz.getWorldPosition(new THREE.Vector3()), t: tiempo });
-        while (mano.historial.length > 2 && tiempo - mano.historial[0].t > 0.12) mano.historial.shift();
+        while (mano.historial.length > 2 && tiempo - mano.historial[0].t > 0.2) mano.historial.shift();
       }
       // …y después se decide si se agarra o se suelta.
       if (mano.tipo === 'xr') this.gestosMano(mano);

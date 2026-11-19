@@ -16,6 +16,13 @@ export const CONFIG = {
     distanciaCercana: 0.14, // agarre directo: la mano toca el objeto
     distanciaRayo: 3.0, // agarre a distancia con el rayo (útil sentado)
   },
-  fisica: { gravedad: 9.8, velocidadMaxima: 6, esperaPiso: 1.2 },
+  fisica: {
+    gravedad: 9.8,
+    velocidadMaxima: 8,
+    esperaPiso: 1.2,
+    // En VR los tiros se sienten más débiles que en la realidad (brazo sin peso, sin muñeca):
+    // se refuerza la velocidad al soltar. Los movimientos lentos (apoyar) casi no cambian.
+    refuerzoTiro: 1.3,
+  },
   camaraEscritorio: { altura: 1.55 }, // vista sin visor (pruebas en PC)
 };
