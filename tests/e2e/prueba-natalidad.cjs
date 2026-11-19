@@ -320,7 +320,9 @@ const verificar = (ok, texto) => { console.log(`${ok ? '✔' : '✘'} ${texto}`)
     for (const v of voces) if (v === esperadas[k]) k++;
     verificar(k === esperadas.length, `suenan las 9 frases de la voz, en orden (${voces.join(', ')})`);
     const cargadas = await ev(() => Object.keys(__juego.ctx.ambiente.voces).length);
-    verificar(cargadas === 9, `se cargaron los 9 audios de la voz (${cargadas})`);
+    verificar(cargadas === 14, `se cargaron los 14 audios de la voz (${cargadas})`);
+    verificar(voces.some((v) => v.startsWith('menos')), 'suena "Este año hay N chicos menos en la plaza"');
+    verificar(voces.includes('sinCompanero'), 'suena "Tu compañero de juego ya no está"');
 
     const dmin = await ev(() => window.__distanciaMinima);
     verificar(dmin >= 0.6, `ningún chico atraviesa al jugador (distancia mínima: ${dmin.toFixed(2)} m)`);

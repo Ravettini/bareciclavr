@@ -350,9 +350,8 @@ export class CapHamaca extends Capitulo {
         this.espera = 0.9;
         ctx.manos.vibrar(mano, 0.6, 80);
         ctx.ambiente.risa();
-        if (this.empujones === 1 || this.empujones % 3 === 0) {
-          ctx.panel.mostrar({ titulo: '¡Más alto!', cuerpo: this.empujones === 1 ? '¡Le encanta! Seguí empujando.' : `${this.empujones} empujones. ¡Se ríe!`, tono: 'acierto' });
-        }
+        // Texto neutro, centrado en la hamaca (configurable en datos/natalidad.json).
+        if (this.empujones === 1) ctx.panel.mostrar({ titulo: this.def.empujeTitulo || '¡Muy bien!', cuerpo: this.def.empujeCuerpo || 'La hamaca sube cada vez más alto.', tono: 'acierto' });
       }
     }
     if (this.reloj >= this.def.duracion) this.terminado = true;

@@ -51,8 +51,10 @@
       "juego": "hamaca",
       "anio": 2019,
       "duracion": 25,
-      "cuerpo": "Empujá la hamaca: tocala cuando se acerca a vos.",
-      "pie": "La hamaca de al lado ya no tiene asiento"
+      "cuerpo": "Empujá la hamaca cuando vuelve hacia vos.",
+      "pie": "La hamaca de al lado ya no tiene asiento",
+      "empujeTitulo": "¡Muy bien!",
+      "empujeCuerpo": "La hamaca sube cada vez más alto."
     },
     {
       "juego": "burbujas",
@@ -129,6 +131,10 @@
     "final": "sonidos/voz-07-final.mp3",
     "dato": "sonidos/voz-08-dato.mp3",
     "cierre": "sonidos/voz-09-cierre.mp3",
-    "_pendientes": "Frases ya conectadas en el código pero sin audio todavía (ver docs/guion-voz.md, parte 2): menos1, menos2, menos3, sinCompanero, agarrala. Al tener los archivos, agregarlos acá como las demás."
+    "menos1": "sonidos/voz-10-menos-1.mp3",
+    "menos2": "sonidos/voz-11-menos-2.mp3",
+    "menos3": "sonidos/voz-12-menos-3.mp3",
+    "sinCompanero": "sonidos/voz-13-sin-companero.mp3",
+    "agarrala": "sonidos/voz-14-agarrala.mp3"
   }
 }

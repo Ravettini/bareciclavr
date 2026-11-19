@@ -48,7 +48,7 @@ Tener hijos es una decisión de cada persona. Que quien quiera, pueda: eso se ac
 
 ---
 
-# Parte 2 · Frases nuevas (pendientes de grabar)
+# Parte 2 · Frases nuevas (grabadas el 19/11)
 
 Mismas indicaciones: misma voz (Martin Kalbin – Argentinian Narrator), mismo modelo y ajustes,
 **en un solo audio**. No hace falta que respete las pausas: el audio se corta con la transcripción.

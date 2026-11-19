@@ -4,7 +4,7 @@
  * sin conexión se usa lo guardado en la última visita.
  * Al agregar archivos nuevos (modelos, sonidos), sumalos a ARCHIVOS y subí VERSION.
  */
-const VERSION = 'ba-recicla-v10';
+const VERSION = 'ba-recicla-v11';
 const ARCHIVOS = [
   './', 'index.html', 'reciclaje.html', 'natalidad.html', 'manifest.webmanifest', 'icono.svg', 'datos/reglas.json', 'datos/natalidad.json',
   'src/arranque.js', 'src/main.js', 'src/config.js',
@@ -18,6 +18,8 @@ const ARCHIVOS = [
   'sonidos/voz-01-inicio.mp3', 'sonidos/voz-02-devolvela.mp3', 'sonidos/voz-03-pasan-los-anios.mp3',
   'sonidos/voz-04-basquet.mp3', 'sonidos/voz-05-hamaca.mp3', 'sonidos/voz-06-burbujas.mp3',
   'sonidos/voz-07-final.mp3', 'sonidos/voz-08-dato.mp3', 'sonidos/voz-09-cierre.mp3',
+  'sonidos/voz-10-menos-1.mp3', 'sonidos/voz-11-menos-2.mp3', 'sonidos/voz-12-menos-3.mp3',
+  'sonidos/voz-13-sin-companero.mp3', 'sonidos/voz-14-agarrala.mp3',
   'vendor/three/three.module.js', 'vendor/three/three.core.js',
   'vendor/three/addons/webxr/XRHandModelFactory.js', 'vendor/three/addons/webxr/XRHandPrimitiveModel.js',
   'vendor/three/addons/webxr/XRHandMeshModel.js', 'vendor/three/addons/loaders/GLTFLoader.js',
