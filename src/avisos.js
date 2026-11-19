@@ -3,7 +3,7 @@
  * La función real está en index.html (así captura también errores de carga
  * que ocurren antes de que corra este código).
  */
-export const VERSION = 'v0.6.2';
+export const VERSION = 'v0.7.0';
 
 export function mostrarAviso(texto) {
   if (window.mostrarAviso) window.mostrarAviso(texto);

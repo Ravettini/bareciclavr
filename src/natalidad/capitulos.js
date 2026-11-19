@@ -18,7 +18,8 @@ import * as THREE from 'three';
 export const LUGARES = {
   pelota: { x: 0, z: 0, rotY: 0, panel: [0, 2.35, -4.0], despedida: [[-1, -2.6], [1, -2.6]] },
   basquet: { x: -6.5, z: 2.0, rotY: 0, panel: [2.0, 2.45, -3.4], despedida: [[-0.6, -2.7], [-1.4, -2.3], [0.2, -2.9]] },
-  hamaca: { x: -3.8, z: -3.25, rotY: 0, panel: [1.9, 2.4, -2.6], despedida: [[-1.4, -2.0], [-2.0, -1.1], [-0.9, -2.9]] },
+  // Hamaca: el jugador está DETRÁS de la hamaca (mirando hacia el centro de la plaza) para empujar.
+  hamaca: { x: -3.8, z: -6.55, rotY: Math.PI, panel: [0, 2.3, -3.0], despedida: [[-2.6, -1.2], [1.7, -1.6], [-2.4, -2.6]] },
   burbujas: { x: 1.6, z: 0.7, rotY: Math.atan2(-(2.9 - 1.6), -(-1.6 - 0.7)), panel: [-1.7, 2.3, -3.0], despedida: [[-1.1, -2.4], [1.3, -2.3], [-0.3, -3.3], [0.8, -3.4]] },
   final: { x: 0, z: 0, rotY: 0, panel: [0, 2.35, -4.0], despedida: [[-0.9, -2.5], [0.9, -2.7], [0, -3.3]] },
 };
@@ -187,6 +188,7 @@ export class CapPelota extends Capitulo {
         this.ctx.pelota.raiz.position.distanceTo(this.ctx.posicionJugador().setY(0.11)) <= 1.7) {
       this.aviso = true;
       this.ctx.panel.mostrar({ titulo: String(this.def.anio), cuerpo: this.def.agarrala || 'Agarrá la pelota y tirásela.' });
+      this.ctx.ambiente.voz('agarrala', { cola: true });
     }
     if (this.ctx.pelota.estado === 'agarrado') {
       this.aviso = false;
@@ -288,6 +290,7 @@ export class CapBasquet extends Capitulo {
     if (p.estado === 'enChico' && p.duenio === this.pasador.chico) { p.estado = 'cayendo'; p.duenio = null; }
     this.ctx.chicos.esfumar(this.pasador.chico);
     this.ctx.panel.mostrar({ titulo: String(this.def.anio), cuerpo: this.def.sinCompanero || 'Tu compañero de juego ya no está.', tono: 'neutro' });
+    this.ctx.ambiente.voz('sinCompanero');
     this.reloj = this.def.duracion - 4.5; // quedan unos segundos para que se note, y sigue
   }
 
@@ -334,12 +337,15 @@ export class CapHamaca extends Capitulo {
     a.amplitud = Math.max(0.12, a.amplitud - dt * 0.025);
     this.espera -= dt;
     const asiento = ctx.hamacas.posicionAsiento(0, _tmp2);
+    // La espalda del chico (un poco arriba del asiento): ahí se empuja.
+    const espalda = asiento.add(_tmp3.set(0, 0.3, -0.12));
     for (const mano of ctx.manos.manos) {
       if (!mano.fuente) continue;
       const punto = ctx.manos.puntoDeAgarre(mano, _tmp);
-      // Empujar: tocar al chico/asiento mientras la hamaca empieza a alejarse.
-      if (this.espera <= 0 && punto.distanceTo(asiento) < 0.55 && a.velocidad > 0.05) {
-        a.amplitud = Math.min(0.55, a.amplitud + 0.1);
+      // Empujar desde atrás: tocar la espalda del chico cuando la hamaca vuelve hacia el jugador
+      // y empieza a alejarse (velocidad negativa = hacia el centro de la plaza).
+      if (this.espera <= 0 && punto.distanceTo(espalda) < 0.5 && a.velocidad < -0.05) {
+        a.amplitud = Math.min(0.5, a.amplitud + 0.1);
         this.empujones++;
         this.espera = 0.9;
         ctx.manos.vibrar(mano, 0.6, 80);
@@ -353,7 +359,7 @@ export class CapHamaca extends Capitulo {
   }
   /** En la PC (sin visor): clic sobre el chico para empujar. */
   empujarConMouse() {
-    this.asiento.amplitud = Math.min(0.55, this.asiento.amplitud + 0.1);
+    this.asiento.amplitud = Math.min(0.5, this.asiento.amplitud + 0.1);
     this.empujones++;
     this.ctx.ambiente.risa();
   }
@@ -435,3 +441,4 @@ export class CapFinal extends Capitulo {
 export const CAPITULOS = { pelota: CapPelota, basquet: CapBasquet, hamaca: CapHamaca, burbujas: CapBurbujas, final: CapFinal };
 const _tmp = new THREE.Vector3();
 const _tmp2 = new THREE.Vector3();
+const _tmp3 = new THREE.Vector3();

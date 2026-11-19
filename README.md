@@ -19,7 +19,7 @@ minijuego por año en la misma plaza; cada año hay **menos chicos** y **menos e
 |---|---|---|---|
 | 2014 | Atajar y devolver la pelota | 16 | Colores vivos, todo funciona |
 | 2016 | Básquet. El compañero se esfuma con la pelota en el aire | 15 → 14 | Tobogán cerrado con cinta |
-| 2019 | Empujar la hamaca | 12 | A la hamaca de al lado le sacaron el asiento |
+| 2019 | Empujar la hamaca (desde atrás) | 12 | A la hamaca de al lado le sacaron el asiento |
 | 2022 | Reventar burbujas (una sola chica en el arenero) | 9 | Arenero tapado con una lona; menos color |
 | 2024 | La pelota vuelve rodando; la tirás y nadie la devuelve | 8 | Juegos vallados, todo gris |
 
@@ -29,12 +29,18 @@ corresponden según la serie de nacimientos **saludan y se esfuman** a la vista 
 desaparecen en destellos), dejando su juguete en el piso. El panel cuenta cuántos quedan. La plaza
 pierde color de a poco; los chicos conservan el suyo hasta que se van.
 
+**Cartel de mensajes:** sigue la mirada de forma suave (a 2,4 m, un poco por encima de los ojos);
+si el jugador gira la cabeza más de 30°, se reacomoda frente a él, y cada texto nuevo aparece donde
+está mirando. Se dibuja por encima de todo para que nunca quede tapado.
+
 **Jugar sentado:** al entrar en VR (y en cada cambio de año) se mide la altura de la cabeza; si está
 por debajo de 1,3 m, el jugador "sube" hasta que sus ojos quedan a 1,45 m. La pelota que está en el
 piso cerca salta a la mano cuando se baja la mano (con controles, apretando el gatillo).
 
-**Tiros:** la velocidad al soltar es la máxima de los últimos ~150 ms (medida en tramos de 50 ms) con
-un refuerzo del 30 % para tiros, así la pelota no "se cae" al soltarla.
+**Tiros:** si al soltar la mano todavía se mueve, es un tiro: la velocidad es la máxima de los
+últimos ~250 ms (medida en tramos de 50 ms) con un refuerzo del 30 %, así la pelota no "se cae" al
+soltarla. Si la mano ya estaba casi quieta, es apoyar o dejar caer: cae suave (por ejemplo, un
+residuo en el contenedor).
 
 La pérdida de espacios es una **metáfora** (cinta, asiento quitado, lona, vallas, color): no hay
 carteles literales de cierre.

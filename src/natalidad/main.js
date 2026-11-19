@@ -44,6 +44,9 @@ const CHICOS = [
 ];
 const INDICES = { pasador: 0, hamaca: 1, burbujas: 4, publicoBasquet: [14, 9] };
 
+const _cabeza = new THREE.Vector3();
+const _frente = new THREE.Vector3();
+
 async function iniciar() {
   const resp = await fetch('datos/natalidad.json');
   if (!resp.ok) throw new Error(`No se pudieron cargar los datos (${resp.status}).`);
@@ -97,7 +100,8 @@ async function iniciar() {
   const ambiente = new Ambiente();
   ambiente.configurarVoces(datos.voces);
   const pelota = new Pelota(escena, ambiente);
-  const panel = new Panel(escena, { posicion: [0, 2.35, -4.0], ancho: 2.3, alto: 0.95 });
+  // Panel de mensajes: sigue la mirada (ver Panel.seguir), a 2,4 m y un poco por encima de los ojos.
+  const panel = new Panel(escena, { posicion: [0, 2.0, -2.4], ancho: 1.7, alto: 0.7 });
 
   // Botón Reiniciar sobre un pedestal (se ubica frente al jugador al final).
   const pedestal = malla(new THREE.CylinderGeometry(0.12, 0.16, 0.85, 8), '#d9cfbf');
@@ -216,6 +220,7 @@ async function iniciar() {
     chicos.actualizar(t, dt, hamacas);
     burbujas.actualizar(t, dt);
     ambiente.actualizar(dt, guion.presentes);
+    panel.seguir(camara.getWorldPosition(_cabeza), camara.getWorldDirection(_frente), dt);
     // El botón Reiniciar aparece frente al jugador, donde esté.
     if (botonReiniciar.visible) {
       const frente = rig.localToWorld(new THREE.Vector3(0, 0, -0.75));

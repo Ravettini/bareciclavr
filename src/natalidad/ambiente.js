@@ -50,28 +50,38 @@ export class Ambiente extends Sonido {
   }
 
   /**
-   * Reproduce una frase de la locución. Mientras habla, baja el ambiente; si había otra frase
-   * sonando, la corta. Si el archivo todavía no se decodificó, espera un poco (hasta 3 s).
+   * Reproduce una frase de la locución. Mientras habla, baja el ambiente.
+   * Con { cola: true }, si hay otra frase sonando espera a que termine (no la corta); si no, la
+   * corta. Si el archivo todavía no se decodificó, espera un poco (hasta 3 s).
+   * Si la frase no existe (todavía no se grabó), no hace nada.
    */
-  voz(id, intentos = 15) {
+  voz(id, { cola = false, intentos = 15 } = {}) {
     if (!this.ctx || !this.rutasVoces[id]) return;
     const buffer = this.voces[id];
     if (!buffer) {
-      if (intentos > 0) setTimeout(() => this.voz(id, intentos - 1), 200);
+      if (intentos > 0) setTimeout(() => this.voz(id, { cola, intentos: intentos - 1 }), 200);
       return;
     }
+    if (cola && this.vozSonando) {
+      this.colaVoces = (this.colaVoces || []).concat(id).slice(-3);
+      return;
+    }
+    this.colaVoces = [];
     try { this.vozSonando?.stop(); } catch { /* ya terminó */ }
     const fuente = this.ctx.createBufferSource();
     fuente.buffer = buffer;
-    const g = this.ctx.createGain();
-    g.gain.value = 1;
-    fuente.connect(g).connect(this.ctx.destination);
+    fuente.connect(this.ctx.destination);
     fuente.start();
     this.vozSonando = fuente;
     this.historialVoces.push(id);
-    // El ambiente baja mientras habla la voz.
     this.agacharAmbiente(true);
-    fuente.onended = () => { if (this.vozSonando === fuente) { this.vozSonando = null; this.agacharAmbiente(false); } };
+    fuente.onended = () => {
+      if (this.vozSonando !== fuente) return;
+      this.vozSonando = null;
+      const siguiente = this.colaVoces?.shift();
+      if (siguiente) this.voz(siguiente);
+      else this.agacharAmbiente(false);
+    };
   }
 
   agacharAmbiente(hablando) {

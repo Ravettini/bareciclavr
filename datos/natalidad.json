@@ -4,7 +4,7 @@
   "chicos": 16,
   "tiempos": {
     "_comentario": "Segundos. porAnio: cuánto dura cada año en las transiciones. dato: cuánto se muestra el dato. tope: a partir de este tiempo total la experiencia pasa directo al final (para que nunca supere ~4 minutos).",
-    "porAnio": 1.5,
+    "porAnio": 2.0,
     "dato": 10,
     "tope": 200
   },
@@ -128,6 +128,7 @@
     "burbujas": "sonidos/voz-06-burbujas.mp3",
     "final": "sonidos/voz-07-final.mp3",
     "dato": "sonidos/voz-08-dato.mp3",
-    "cierre": "sonidos/voz-09-cierre.mp3"
+    "cierre": "sonidos/voz-09-cierre.mp3",
+    "_pendientes": "Frases ya conectadas en el código pero sin audio todavía (ver docs/guion-voz.md, parte 2): menos1, menos2, menos3, sinCompanero, agarrala. Al tener los archivos, agregarlos acá como las demás."
   }
 }

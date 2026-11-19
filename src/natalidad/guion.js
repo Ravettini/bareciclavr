@@ -151,7 +151,7 @@ export class Guion {
         if (this.anio >= meta && this.reloj >= (meta - this.anioDesde + 0.5) * porAnio + 2.2) {
           this.pasarA('capitulo');
           this.capitulo.iniciar();
-          ctx.ambiente.voz(this.capitulo.def.juego); // "Dos mil dieciséis. ¡A jugar al básquet!…"
+          ctx.ambiente.voz(this.capitulo.def.juego, { cola: true }); // "Dos mil dieciséis. ¡A jugar al básquet!…"
         }
         break;
       }
@@ -216,11 +216,16 @@ export class Guion {
     ctx.ambiente.tic();
     const lista = this.despedidas?.[this.anio] || [];
     const quedan = lista.objetivo ?? this.presentes;
+    const menos = lista.length;
+    // "Este año hay un chico menos en la plaza. Quedan 12." (con voz, si está grabada)
     ctx.panel.mostrar({
       titulo: String(this.anio),
-      cuerpo: `${this.datos.textos.tiempo.cuerpo} Quedan ${quedan} chicos.`,
-      pie: '2014: 16 chicos',
+      cuerpo: menos
+        ? `Este año hay ${menos === 1 ? 'un chico menos' : `${menos} chicos menos`} en la plaza. Quedan ${quedan}.`
+        : this.datos.textos.tiempo.cuerpo,
+      pie: `En 2014 había ${ctx.chicos.lista.length} chicos`,
     });
+    if (menos) ctx.ambiente.voz(`menos${Math.min(menos, 3)}`, { cola: true });
     lista.forEach((c, n) => {
       this.despues(n * 0.35, () => {
         c.comportamiento = 'quieto';

@@ -107,6 +107,14 @@ const verificar = (ok, texto) => { console.log(`${ok ? '✔' : '✘'} ${texto}`)
     });
     // Capturas con la mirada un poco inclinada: con la cabeza justo al horizonte, el emulador
     // muestra negra la mitad de abajo (efecto del emulador, no del juego).
+    // ¿El cartel está frente a la mirada del jugador? (ángulo entre la mirada y el cartel)
+    const anguloCartel = () => ev(() => {
+      const { THREE } = __juego;
+      const cab = __juego.camara.getWorldPosition(new THREE.Vector3());
+      const mirada = __juego.camara.getWorldDirection(new THREE.Vector3()).setY(0).normalize();
+      const hacia = __juego.panel.malla.getWorldPosition(new THREE.Vector3()).sub(cab).setY(0).normalize();
+      return Math.acos(Math.min(1, mirada.dot(hacia))) * 180 / Math.PI;
+    });
     const capturar = async (nombre) => {
       await ev(() => { const q = new __juego.THREE.Quaternion().setFromAxisAngle(new __juego.THREE.Vector3(1, 0, 0), -0.15); __dispositivoXR.quaternion.set(q.x, q.y, q.z, q.w); });
       await esperar(250);
@@ -213,13 +221,16 @@ const verificar = (ok, texto) => { console.log(`${ok ? '✔' : '✘'} ${texto}`)
     // ---- 2019: empujar la hamaca ----
     if (await esperarQue(() => __juego.chicos.lista.some((c) => c.gesto === 'saluda'), 30000)) { await esperar(300); await capturar('n3c-saluda.png'); }
     if (await esperarQue(() => __juego.chicos.lista.some((c) => c.comportamiento === 'esfuma' && c.tEsfuma > 0.9), 8000)) await capturar('n3d-esfumandose.png');
-    verificar(await esperarCapitulo('hamaca'), '2019: aparece frente a las hamacas');
+    verificar(await esperarCapitulo('hamaca'), '2019: aparece detrás de las hamacas');
+    await esperar(800);
+    const ang19 = await anguloCartel();
+    verificar(ang19 < 15, `el cartel aparece frente a la mirada (${ang19.toFixed(0)}°)`);
     verificar(await ev(() => __juego.hamacas.asientos[1].malla.visible === false), '2019: a la hamaca de al lado le sacaron el asiento');
     await ev(() => {
       // La mano sigue al asiento (un poco del lado del jugador) durante 4 s.
       const id = setInterval(() => {
         const a = __juego.hamacas.posicionAsiento(0, new __juego.THREE.Vector3());
-        __prueba.palmaEn('right', [a.x, a.y + 0.25, a.z + 0.25]);
+        __prueba.palmaEn('right', [a.x, a.y + 0.3, a.z - 0.3]); // la espalda del chico, desde atrás
       }, 30);
       setTimeout(() => clearInterval(id), 4000);
     });
@@ -228,6 +239,12 @@ const verificar = (ok, texto) => { console.log(`${ok ? '✔' : '✘'} ${texto}`)
 
     // ---- 2022: burbujas ----
     verificar(await esperarCapitulo('burbujas'), '2022: aparece en el arenero con las burbujas');
+    // Girar la cabeza 70° a la derecha: el cartel se reacomoda frente a la nueva mirada.
+    await ev(() => { const q = new __juego.THREE.Quaternion().setFromAxisAngle(new __juego.THREE.Vector3(0, 1, 0), -1.2); __dispositivoXR.quaternion.set(q.x, q.y, q.z, q.w); });
+    await esperar(2500);
+    const angGiro = await anguloCartel();
+    await ev(() => __dispositivoXR.quaternion.set(0, 0, 0, 1));
+    verificar(angGiro < 15, `al girar la cabeza, el cartel la sigue (${angGiro.toFixed(0)}°)`);
     await ev(() => {
       // La mano va hacia la burbuja más cercana.
       const id = setInterval(() => {

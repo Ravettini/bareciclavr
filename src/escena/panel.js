@@ -2,6 +2,10 @@ import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { partirEnLineas } from './textos.js';
 
+const _f = new THREE.Vector3();
+const _o = new THREE.Vector3();
+const _a = new THREE.Vector3();
+
 /**
  * Panel de mensajes educativos flotando detrás de la mesa.
  * Se redibuja en un canvas solo cuando cambia el mensaje (no en cada frame).
@@ -33,9 +37,42 @@ export class Panel {
   }
 
   /**
+   * El panel sigue la mirada de forma suave ("lazy follow"): se queda quieto mientras se lo mira,
+   * y si el jugador gira la cabeza más de ~30°, se reacomoda frente a él. Cuando cambia el texto,
+   * aparece directamente donde está mirando. Va un poco por encima de los ojos para no tapar el juego.
+   * @param {THREE.Vector3} cabeza posición de la cabeza (mundo)
+   * @param {THREE.Vector3} frente dirección de la mirada (mundo)
+   */
+  seguir(cabeza, frente, dt, { distancia = 2.4, altura = 0.45 } = {}) {
+    if (!this.encima) {
+      // Siempre visible: se dibuja por encima de todo (nunca lo tapan cadenas, árboles o chicos).
+      this.encima = true;
+      this.malla.material.depthTest = false;
+      this.malla.renderOrder = 10;
+    }
+    const f = _f.set(frente.x, 0, frente.z);
+    if (f.lengthSq() < 1e-4) return;
+    f.normalize();
+    const objetivo = _o.copy(cabeza).addScaledVector(f, distancia);
+    objetivo.y = cabeza.y + altura;
+    const actual = _a.subVectors(this.malla.position, cabeza).setY(0).normalize();
+    const desviado = actual.dot(f) < Math.cos(THREE.MathUtils.degToRad(30));
+    if (this.saltar || desviado) this.siguiendo = true;
+    if (this.saltar) { this.malla.position.copy(objetivo); this.saltar = false; this.pop = 1; }
+    if (this.siguiendo) {
+      this.malla.position.lerp(objetivo, 1 - Math.exp(-dt * 4));
+      if (this.malla.position.distanceTo(objetivo) < 0.05) this.siguiendo = false;
+    }
+    this.malla.lookAt(cabeza.x, cabeza.y + altura * 0.5, cabeza.z);
+    // Pequeño "salto" al aparecer un texto nuevo.
+    if (this.pop > 0) { this.pop = Math.max(0, this.pop - dt * 4); this.malla.scale.setScalar(1 + Math.sin(this.pop * Math.PI) * 0.12); }
+  }
+
+  /**
    * @param {{titulo:string, cuerpo:string, pie?:string, tono?:'neutro'|'acierto'|'error'}} contenido
    */
   mostrar({ titulo, cuerpo, pie = '', tono = 'neutro' }) {
+    this.saltar = true; // si sigue la mirada, aparece donde mira el jugador
     this.ultimo = { titulo, cuerpo, pie, tono };
     const { ctx, canvas } = this;
     const colores = { neutro: '#1f6f3a', acierto: '#2e9b46', error: '#d9822b' };

@@ -45,3 +45,32 @@ Tener hijos es una decisión de cada persona. Que quien quiera, pueda: eso se ac
 | 7 | voz-07-final | Cuando la pelota vuelve rodando (2024) |
 | 8 | voz-08-dato | El dato |
 | 9 | voz-09-cierre | El cierre |
+
+---
+
+# Parte 2 · Frases nuevas (pendientes de grabar)
+
+Mismas indicaciones: misma voz (Martin Kalbin – Argentinian Narrator), mismo modelo y ajustes,
+**en un solo audio**. No hace falta que respete las pausas: el audio se corta con la transcripción.
+
+## Texto para pegar
+
+```
+Este año hay un chico menos en la plaza.
+<break time="3.0s" />
+Este año hay dos chicos menos en la plaza.
+<break time="3.0s" />
+Este año hay tres chicos menos en la plaza.
+<break time="3.0s" />
+Tu compañero de juego... ya no está.
+<break time="3.0s" />
+Agarrá la pelota y tirásela.
+```
+
+| # | Archivo | Momento |
+|---|---|---|
+| 10 | voz-10-menos-1 | En un salto de tiempo, el año en que se va un chico |
+| 11 | voz-11-menos-2 | …el año en que se van dos |
+| 12 | voz-12-menos-3 | …el año en que se van tres |
+| 13 | voz-13-sin-companero | 2016: el compañero de básquet se esfuma |
+| 14 | voz-14-agarrala | La pelota quedó cerca y el jugador no la agarra |
